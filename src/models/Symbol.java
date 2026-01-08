@@ -6,12 +6,13 @@ public enum Symbol {
     ZERO("O");
 
     private final String display;
-    Symbol(String display){
+
+    Symbol(String display) {
         this.display = display;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return display;
     }
 }
