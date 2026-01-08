@@ -1,5 +1,6 @@
 package services;
 
+import exceptions.IllegalPositionException;
 import models.*;
 import ui.ProgramUI;
 
@@ -64,7 +65,7 @@ public class SessionManager {
         Symbol firstPlayerSymbol = player1MovesFirst ? options.player1Symbol() : options.player2Symbol();
         boolean zeroStarts = (firstPlayerSymbol == Symbol.ZERO);
 
-        Game game = new Game(options.fieldSize(), zeroStarts);
+        GameService gameService = new GameService(options.fieldSize(), zeroStarts);
 
         ui.showRoundStart(currentRound,
                 getCurrentPlayerName(player1MovesFirst),
@@ -73,9 +74,9 @@ public class SessionManager {
         int moveCount = 0;
         boolean player1Moves = player1MovesFirst;
 
-        while (game.isGameRunning()) {
+        while (gameService.getGameState() == GameState.PLAYING) {
             ui.showGameState(
-                    getGameStateData(game, player1Moves),
+                    getGameStateData(gameService, player1Moves),
                     options.player1Name(),
                     result.getPlayer1Wins(),
                     options.player2Name(),
@@ -88,35 +89,33 @@ public class SessionManager {
             MoveProvider currentMoveProvider = getCurrentMoveProvider(player1Moves);
 
             // Получаем ход от соответствующего источника
-            Coordinates move = currentMoveProvider.getMove(game, this);
+            Coordinates move = currentMoveProvider.getMove(gameService, this);
 
             if (move == null) {
                 return null; // Пользователь выбрал выход
             }
 
-            if (game.makeMove(move.row, move.column)) {
+            try {
+                gameService.makeMove(move.row, move.column);
                 moveCount++;
                 player1Moves = !player1Moves;
-            } else {
+            }
+            catch (IllegalPositionException e){
                 ui.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
 
         // Определяем победителя раунда
-        SessionResult.GameResult.Winner winner = determineRoundWinner(game);
+        SessionResult.GameResult.Winner winner = determineRoundWinner(gameService);
         return new SessionResult.GameResult(winner, moveCount);
     }
 
-    private GameStateData getGameStateData(Game game, boolean player1Moves) {
+    private GameStateData getGameStateData(GameService gameService, boolean player1Moves) {
         String[][] field = new String[options.fieldSize()][options.fieldSize()];
         for (int row = 1; row <= options.fieldSize(); row++) {
             for (int col = 1; col <= options.fieldSize(); col++) {
-                Symbol cell = game.getSymbol(row, col);
-                field[row-1][col-1] = switch (cell) {
-                    case CROSS -> "X";
-                    case ZERO -> "O";
-                    case NONE -> " ";
-                };
+                Symbol cell = gameService.getSymbol(row, col);
+                field[row-1][col-1] = cell.toString();
             }
         }
 
@@ -132,11 +131,12 @@ public class SessionManager {
         return player1Moves ? options.player1Name() : options.player2Name();
     }
 
-    private SessionResult.GameResult.Winner determineRoundWinner(Game game) {
-        if (game.isCrossesWon()) {
+    private SessionResult.GameResult.Winner determineRoundWinner(GameService gameService) {
+        GameState gameState = gameService.getGameState();
+        if (gameState == GameState.CROSSES_WON) {
             return (options.player1Symbol() == Symbol.CROSS) ?
                     SessionResult.GameResult.Winner.PLAYER1 : SessionResult.GameResult.Winner.PLAYER2;
-        } else if (game.isZeroesWon()) {
+        } else if (gameState == GameState.ZEROES_WON) {
             return (options.player1Symbol() == Symbol.ZERO) ?
                     SessionResult.GameResult.Winner.PLAYER1 : SessionResult.GameResult.Winner.PLAYER2;
         } else {
