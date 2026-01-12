@@ -1,0 +1,107 @@
+package services;
+
+import models.SessionData;
+import models.SessionResult;
+import models.SessionOptions;
+import models.Statistics;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+public class StatisticsService {
+    private static final String STATS_FILE = "tictactoe_stats.txt";
+    private static final String STATS_DIR = "data";
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    public StatisticsService() {
+        ensureStatsDirectory();
+    }
+
+    private void ensureStatsDirectory() {
+        File dir = new File(STATS_DIR);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+    }
+
+    public void saveSession(SessionData data) throws IOException {
+        String filePath = STATS_DIR + File.separator + STATS_FILE;
+        String record = formatSessionRecord(data);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
+            writer.write(record);
+            writer.newLine();
+        }
+    }
+
+    public Statistics getStatistics() throws IOException {
+        String filePath = STATS_DIR + File.separator + STATS_FILE;
+        File statsFile = new File(filePath);
+
+        if (!statsFile.exists()) {
+            return new Statistics(Collections.emptyList(), 0);
+        }
+
+        List<String> sessions = new ArrayList<>();
+        int totalRounds = 0;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(statsFile))) {
+            StringBuilder sessionBuilder = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty() && !sessionBuilder.isEmpty()) {
+                    sessions.add(sessionBuilder.toString());
+                    sessionBuilder = new StringBuilder();
+                } else {
+                    sessionBuilder.append(line).append("\n");
+
+                    if (line.startsWith("total_rounds=")) {
+                        totalRounds += Integer.parseInt(line.split("=")[1]);
+                    }
+                }
+            }
+
+            if (!sessionBuilder.isEmpty()) {
+                sessions.add(sessionBuilder.toString());
+            }
+        }
+
+        return new Statistics(sessions, totalRounds);
+    }
+
+    public boolean clearStatistics() throws IOException {
+        String filePath = STATS_DIR + File.separator + STATS_FILE;
+        File statsFile = new File(filePath);
+
+        if (statsFile.exists()) {
+            return Files.deleteIfExists(statsFile.toPath());
+        }
+        return false;
+    }
+
+    private String formatSessionRecord(SessionData data) {
+        return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
+                "game_mode=" + data.options.gameMode() + "\n" +
+                "field_size=" + data.options.fieldSize() + "\n" +
+                "player1_name=" + data.options.player1Name() + "\n" +
+                "player2_name=" + data.options.player2Name() + "\n" +
+                "player1_symbol=" + data.options.player1Symbol() + "\n" +
+                "player2_symbol=" + data.options.player2Symbol() + "\n" +
+                "wins_to_complete=" + data.options.winsToComplete() + "\n" +
+                "total_rounds=" + data.result.getTotalRounds() + "\n" +
+                "player1_wins=" + data.result.getPlayer1Wins() + "\n" +
+                "player2_wins=" + data.result.getPlayer2Wins() + "\n" +
+                "draws=" + data.result.getDraws() + "\n" +
+                "\n";
+    }
+
+    public List<String> getAllSessions() throws IOException {
+        return getStatistics().sessionHistory();
+    }
+}
