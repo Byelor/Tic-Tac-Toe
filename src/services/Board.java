@@ -38,11 +38,11 @@ class Board {
     }
 
     private boolean existsWinningRow() {
-        for (int i = 0; i < field.length; i++) {
-            if (field[i][0] != Symbol.NONE) {
+        for (Symbol[] symbols : field) {
+            if (symbols[0] != Symbol.NONE) {
                 boolean winning = true;
                 for (int j = 1; j < field.length; j++) {
-                    if (field[i][j] != field[i][0]) {
+                    if (symbols[j] != symbols[0]) {
                         winning = false;
                         break;
                     }
@@ -97,10 +97,9 @@ class Board {
     }
 
     private void checkPositionCorrectness(int row, int column) {
-        if (isPositionOutOfBoard(row, column))
-            throw new IllegalMovePositionException("the symbol cannot be placed outside the field");
-        if(isPositionFilled(row, column))
-            throw new IllegalMovePositionException("the symbol cannot be placed on another symbol");
+        if (isPositionOutOfBoard(row, column) || isPositionFilled(row, column))
+            throw new IllegalMovePositionException("Position with row %s and column %s is incorrect"
+                    .formatted(row, column));
     }
 
     private boolean isPositionOutOfBoard(int row, int column) {
