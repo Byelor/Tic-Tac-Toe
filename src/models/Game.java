@@ -1,22 +1,21 @@
-package services;
+package models;
 
-import models.Symbol;
-import models.GameState;
+import services.Board;
 
-public class GameService {
+public class Game {
     private final Board board;
     private Symbol currentSymbol;
     private GameState gameState;
 
-    public GameService(int boardSize, boolean crossesStarts) {
+    public Game(int boardSize, boolean crossesStarts) {
         board = new Board(boardSize);
         currentSymbol = crossesStarts ? Symbol.CROSS : Symbol.ZERO;
         gameState = GameState.PLAYING;
     }
 
-    public void makeMove(int row, int column) {
-        board.setSymbol(row, column, currentSymbol);
-        updateGameState();
+    public void makeMove(Coordinates moveCoordinates) {
+        board.setSymbol(moveCoordinates.row, moveCoordinates.column, currentSymbol);
+        updateGameStateIfNeeded();
         switchCurrentSymbol();
     }
 
@@ -35,7 +34,7 @@ public class GameService {
             currentSymbol = Symbol.CROSS;
     }
 
-    private void updateGameState() {
+    private void updateGameStateIfNeeded() {
         if (board.existsWinningLine())
             setWinner(currentSymbol);
         else if (board.isFieldFilled())

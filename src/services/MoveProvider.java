@@ -1,7 +1,8 @@
 package services;
 
 import models.Coordinates;
+import models.Game;
 
 public interface MoveProvider {
-    Coordinates getMove(GameService gameService, SessionManager session);
+    Coordinates getMove(Game game, int boardSize);
 }

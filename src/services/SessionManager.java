@@ -2,137 +2,146 @@ package services;
 
 import exceptions.IllegalMovePositionException;
 import models.*;
-import ui.ProgramUI;
+import ui.ProgramScreenHelper;
+
+import java.util.Objects;
 
 public class SessionManager {
     private final SessionData data;
-    private final ProgramUI ui;
+    private final ProgramScreenHelper ui;
 
     private final MoveProvider player1MoveProvider;
     private final MoveProvider player2MoveProvider;
 
-    public SessionManager(SessionOptions options, ProgramUI ui) {
+    public SessionManager(SessionOptions options, ProgramScreenHelper ui) {
         data = new SessionData(options, new SessionResult());
         this.ui = ui;
         this.player1MoveProvider = new HumanMoveProvider(ui);
-        this.player2MoveProvider = options.gameMode() == SessionOptions.GameMode.PVE ?
+        this.player2MoveProvider = options.gameMode() == GameMode.PVE ?
                 new ComputerMoveProvider() :
                 new HumanMoveProvider(ui);
     }
 
     public SessionData execute() {
-        boolean sessionActive = true;
-        boolean player1MovesFirst = true;
+        boolean firstPlayerMovesFirst = true;
 
-        while (sessionActive && shouldContinueSession()) {
-            SessionResult.GameResult roundResult = playRound(player1MovesFirst);
+        while (shouldContinueSession()) {
+            GameResultInfo roundResult = playRound(firstPlayerMovesFirst);
 
             if (roundResult != null) {
-                data.result.addRoundResult(roundResult);
+                data.getResult().addRoundResult(roundResult);
 
-                ui.showRoundResult(roundResult,
-                        getRoundResultMessage(roundResult),
-                        shouldContinueSession());
+                ui.showRoundResult(data.getOptions(), roundResult, shouldContinueSession());
 
-                data.currentRound++;
+                data.incrementCurrentRound();
             } else {
                 // Пользователь выбрал выход
-                sessionActive = false;
                 ui.showMessage("Сессия прервана");
+                break;
             }
 
-            if (data.options.switchTurns()) {
-                player1MovesFirst = !player1MovesFirst;
-            }
-
-            if (sessionActive && shouldContinueSession()) {
-                sessionActive = ui.askToContinue("Продолжить игру? (да/нет)");
-            }
+            firstPlayerMovesFirst = switchPlayerTurnIfNeeded(firstPlayerMovesFirst);
         }
 
         return data;
     }
 
-    private SessionResult.GameResult playRound(boolean player1MovesFirst) {
-        Symbol firstPlayerSymbol = player1MovesFirst ? data.options.player1Symbol() : data.options.player2Symbol();
-        boolean crossesStarts = (firstPlayerSymbol == Symbol.CROSS);
+    private boolean switchPlayerTurnIfNeeded(boolean player1MovesFirst) {
+        if (data.getOptions().shouldSwitchPlayerTurn()) {
+            player1MovesFirst = !player1MovesFirst;
+        }
+        return player1MovesFirst;
+    }
 
-        GameService gameService = new GameService(data.options.fieldSize(), crossesStarts);
+    private GameResultInfo playRound(boolean firstPlayerMovesFirst) {
+        Game game = configureRound(firstPlayerMovesFirst);
 
-        ui.showRoundStart(data.currentRound,
-                getCurrentPlayerName(player1MovesFirst),
-                crossesStarts ? "X" : "O");
+        int totalGameMoveCount = 0;
+        boolean firstPlayerMoves = firstPlayerMovesFirst;
 
-        int moveCount = 0;
-        boolean player1Moves = player1MovesFirst;
+        while (game.getGameState() == GameState.PLAYING) {
+            ui.drawRoundProcessInfo(data, game);
 
-        while (gameService.getGameState() == GameState.PLAYING) {
-            data.currentPlayerName = getCurrentPlayerName(player1Moves);
-            ui.drawRound(data, gameService);
-
-            MoveProvider currentMoveProvider = getCurrentMoveProvider(player1Moves);
+            MoveProvider currentMoveProvider = getCurrentMoveProvider(firstPlayerMoves);
 
             // Получаем ход от соответствующего источника
-            Coordinates move = currentMoveProvider.getMove(gameService, this);
+            Coordinates moveCoordinates = currentMoveProvider.getMove(game, data.getOptions().fieldSize());
 
-            if (move == null) {
+            if (moveCoordinates == null) {
                 return null; // Пользователь выбрал выход
             }
 
             try {
-                gameService.makeMove(move.row, move.column);
-                moveCount++;
-                player1Moves = !player1Moves;
+                game.makeMove(moveCoordinates);
+                switchCurrentPlayerName();
+                totalGameMoveCount++;
+                firstPlayerMoves = !firstPlayerMoves;
             }
             catch (IllegalMovePositionException e){
                 ui.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
 
-        // Определяем победителя раунда
-        SessionResult.GameResult.Winner winner = determineRoundWinner(gameService);
-        return new SessionResult.GameResult(winner, moveCount);
+        GameResultInfo.GameResult gameResult = determineGameResult(game);
+        return new GameResultInfo(gameResult, totalGameMoveCount);
+    }
+
+    private Game configureRound(boolean firstPlayerMovesFirst) {
+        Symbol firstMovePlayerSymbol;
+        String firstMovePlayerName;
+
+        if(firstPlayerMovesFirst) {
+            firstMovePlayerSymbol = data.getOptions().firstPlayerSymbol();
+            firstMovePlayerName = data.getOptions().firstPlayerName();
+        }
+        else {
+            firstMovePlayerSymbol = data.getOptions().secondPlayerSymbol();
+            firstMovePlayerName = data.getOptions().secondPlayerName();
+        }
+
+        ui.showRoundStartInfo(firstMovePlayerName, firstMovePlayerSymbol);
+
+        boolean crossesStarts = (firstMovePlayerSymbol == Symbol.CROSS);
+        Game game = new Game(data.getOptions().fieldSize(), crossesStarts);
+
+        data.setCurrentPlayerName(firstMovePlayerName);
+        return game;
+    }
+
+    private void switchCurrentPlayerName() {
+        if(Objects.equals(data.getCurrentPlayerName(), data.getOptions().firstPlayerName()))
+            data.setCurrentPlayerName(data.getOptions().secondPlayerName());
+        else
+            data.setCurrentPlayerName(data.getOptions().firstPlayerName());
     }
 
     private MoveProvider getCurrentMoveProvider(boolean player1Moves) {
         return player1Moves ? player1MoveProvider : player2MoveProvider;
     }
 
-    private String getCurrentPlayerName(boolean player1Moves) {
-        return player1Moves ? data.options.player1Name() : data.options.player2Name();
-    }
-
-    private SessionResult.GameResult.Winner determineRoundWinner(GameService gameService) {
-        GameState gameState = gameService.getGameState();
+    private GameResultInfo.GameResult determineGameResult(Game game) {
+        GameState gameState = game.getGameState();
         if (gameState == GameState.CROSSES_WON) {
-            return (data.options.player1Symbol() == Symbol.CROSS) ?
-                    SessionResult.GameResult.Winner.PLAYER1 : SessionResult.GameResult.Winner.PLAYER2;
+            return (data.getOptions().firstPlayerSymbol() == Symbol.CROSS) ?
+                    GameResultInfo.GameResult.PLAYER1 : GameResultInfo.GameResult.PLAYER2;
         } else if (gameState == GameState.ZEROES_WON) {
-            return (data.options.player1Symbol() == Symbol.ZERO) ?
-                    SessionResult.GameResult.Winner.PLAYER1 : SessionResult.GameResult.Winner.PLAYER2;
+            return (data.getOptions().firstPlayerSymbol() == Symbol.ZERO) ?
+                    GameResultInfo.GameResult.PLAYER1 : GameResultInfo.GameResult.PLAYER2;
         } else {
-            return SessionResult.GameResult.Winner.DRAW;
+            return GameResultInfo.GameResult.DRAW;
         }
-    }
-
-    private String getRoundResultMessage(SessionResult.GameResult result) {
-        return switch (result.winner()) {
-            case PLAYER1 -> "Победил " + data.options.player1Name() + "!";
-            case PLAYER2 -> "Победил " + data.options.player2Name() + "!";
-            case DRAW -> "Ничья!";
-        };
     }
 
     private boolean shouldContinueSession() {
-        if (data.options.winsToComplete() == 0) {
+        if (expectedCountOfWinsIsNotDefined()) {
             return true;
         } else {
-            return data.result.getPlayer1Wins() < data.options.winsToComplete() &&
-                    data.result.getPlayer2Wins() < data.options.winsToComplete();
+            return data.getResult().getFirstPlayerWinsCount() < data.getOptions().expectedCountOfWins() &&
+                    data.getResult().getSecondPlayerWinsCount() < data.getOptions().expectedCountOfWins();
         }
     }
 
-    public int getFieldSize() {
-        return data.options.fieldSize();
+    private boolean expectedCountOfWinsIsNotDefined() {
+        return data.getOptions().expectedCountOfWins() == 0;
     }
 }

@@ -1,17 +1,18 @@
 package services;
 
 import models.Coordinates;
-import ui.ProgramUI;
+import models.Game;
+import ui.ProgramScreenHelper;
 
 public class HumanMoveProvider implements MoveProvider {
-    private final ProgramUI ui;
+    private final ProgramScreenHelper ui;
 
-    public HumanMoveProvider(ProgramUI ui) {
+    public HumanMoveProvider(ProgramScreenHelper ui) {
         this.ui = ui;
     }
 
     @Override
-    public Coordinates getMove(GameService gameService, SessionManager session) {
-        return ui.getMove(gameService, session);
+    public Coordinates getMove(Game game, int boardSize) {
+        return ui.getMove(game, boardSize);
     }
 }
