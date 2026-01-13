@@ -1,8 +1,6 @@
 package services;
 
 import models.SessionData;
-import models.SessionResult;
-import models.SessionOptions;
 import models.Statistics;
 
 import java.io.*;
@@ -87,17 +85,17 @@ public class StatisticsService {
 
     private String formatSessionRecord(SessionData data) {
         return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
-                "game_mode=" + data.options.gameMode() + "\n" +
-                "field_size=" + data.options.fieldSize() + "\n" +
-                "player1_name=" + data.options.player1Name() + "\n" +
-                "player2_name=" + data.options.player2Name() + "\n" +
-                "player1_symbol=" + data.options.player1Symbol() + "\n" +
-                "player2_symbol=" + data.options.player2Symbol() + "\n" +
-                "wins_to_complete=" + data.options.winsToComplete() + "\n" +
-                "total_rounds=" + data.result.getTotalRounds() + "\n" +
-                "player1_wins=" + data.result.getPlayer1Wins() + "\n" +
-                "player2_wins=" + data.result.getPlayer2Wins() + "\n" +
-                "draws=" + data.result.getDraws() + "\n" +
+                "game_mode=" + data.getOptions().gameMode() + "\n" +
+                "field_size=" + data.getOptions().fieldSize() + "\n" +
+                "player1_name=" + data.getOptions().firstPlayerName() + "\n" +
+                "player2_name=" + data.getOptions().secondPlayerName() + "\n" +
+                "player1_symbol=" + data.getOptions().firstPlayerSymbol() + "\n" +
+                "player2_symbol=" + data.getOptions().secondPlayerSymbol() + "\n" +
+                "wins_to_complete=" + data.getOptions().expectedCountOfWins() + "\n" +
+                "total_rounds=" + data.getResult().getTotalRounds() + "\n" +
+                "player1_wins=" + data.getResult().getFirstPlayerWinsCount() + "\n" +
+                "player2_wins=" + data.getResult().getSecondPlayerWinsCount() + "\n" +
+                "draws=" + data.getResult().getDrawsCount() + "\n" +
                 "\n";
     }
 
