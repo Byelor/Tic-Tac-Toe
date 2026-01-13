@@ -1,15 +1,15 @@
 import services.SessionManager;
 import models.*;
 import services.StatisticsService;
-import ui.ProgramUI;
+import ui.ProgramScreenHelper;
 
 public class Program {
-    private final ProgramUI ui;
+    private final ProgramScreenHelper ui;
     private final StatisticsService statsService;
     private boolean isRunning;
 
     public Program() {
-        this.ui = new ProgramUI();
+        this.ui = new ProgramScreenHelper();
         this.statsService = new StatisticsService();
         this.isRunning = true;
     }
@@ -46,7 +46,7 @@ public class Program {
         SessionManager sessionManager = new SessionManager(options, ui);
         SessionData data = sessionManager.execute();
 
-        if (data != null && data.result.getTotalRounds() > 0) {
+        if (data != null && data.getResult().getTotalRounds() > 0) {
             ui.showSessionSummary(data);
             try {
                 statsService.saveSession(data);
