@@ -72,34 +72,20 @@ public class StatisticsService {
 
         return new Statistics(sessions, totalRounds);
     }
-
-    public boolean clearStatistics() throws IOException {
-        String filePath = STATS_DIR + File.separator + STATS_FILE;
-        File statsFile = new File(filePath);
-
-        if (statsFile.exists()) {
-            return Files.deleteIfExists(statsFile.toPath());
-        }
-        return false;
-    }
-
+    
     private String formatSessionRecord(SessionData data) {
         return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
-                "game_mode=" + data.getOptions().gameMode() + "\n" +
-                "field_size=" + data.getOptions().fieldSize() + "\n" +
-                "player1_name=" + data.getOptions().firstPlayerName() + "\n" +
-                "player2_name=" + data.getOptions().secondPlayerName() + "\n" +
-                "player1_symbol=" + data.getOptions().firstPlayerSymbol() + "\n" +
-                "player2_symbol=" + data.getOptions().secondPlayerSymbol() + "\n" +
-                "wins_to_complete=" + data.getOptions().expectedCountOfWins() + "\n" +
-                "total_rounds=" + data.getResult().getTotalRounds() + "\n" +
-                "player1_wins=" + data.getResult().getFirstPlayerWinsCount() + "\n" +
-                "player2_wins=" + data.getResult().getSecondPlayerWinsCount() + "\n" +
-                "draws=" + data.getResult().getDrawsCount() + "\n" +
+                "game_mode=" + data.getSessionOptions().gameMode() + "\n" +
+                "field_size=" + data.getSessionOptions().fieldSize() + "\n" +
+                "player1_name=" + data.getSessionOptions().firstPlayerName() + "\n" +
+                "player2_name=" + data.getSessionOptions().secondPlayerName() + "\n" +
+                "player1_symbol=" + data.getSessionOptions().firstPlayerSymbol() + "\n" +
+                "player2_symbol=" + data.getSessionOptions().secondPlayerSymbol() + "\n" +
+                "wins_to_complete=" + data.getSessionOptions().expectedCountOfWins() + "\n" +
+                "total_rounds=" + data.getSessionResult().getTotalRounds() + "\n" +
+                "player1_wins=" + data.getSessionResult().getFirstPlayerWinsCount() + "\n" +
+                "player2_wins=" + data.getSessionResult().getSecondPlayerWinsCount() + "\n" +
+                "draws=" + data.getSessionResult().getDrawsCount() + "\n" +
                 "\n";
-    }
-
-    public List<String> getAllSessions() throws IOException {
-        return getStatistics().sessionHistory();
     }
 }
