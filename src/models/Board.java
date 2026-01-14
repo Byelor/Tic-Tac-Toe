@@ -1,27 +1,33 @@
-package services;
+package models;
 
-import exceptions.IllegalBoardSizeException;
 import exceptions.IllegalMovePositionException;
-import models.Symbol;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Board {
     private final Symbol[][] field;
 
     public Board(int boardSize) {
-        if (boardSize < 3)
-            throw new IllegalBoardSizeException("Board size can't be less than 3");
-
         field = new Symbol[boardSize][boardSize];
         prepareBoard();
     }
 
-    public void setSymbol(int row, int column, Symbol symbol) {
-        checkPositionCorrectness(row, column);
-        field[row - 1][column - 1] = symbol;
+    public int getSize() {
+        return field.length;
     }
 
-    public Symbol getSymbol(int row, int column) {
-        return field[row - 1][column - 1];
+    public void setSymbol(Coordinates moveCoordinates, Symbol symbol) {
+        checkPositionCorrectness(moveCoordinates);
+        int i = moveCoordinates.row() - 1;
+        int j = moveCoordinates.column() - 1;
+        field[i][j] = symbol;
+    }
+
+    public Symbol getSymbol(Coordinates moveCoordinates) {
+        int i = moveCoordinates.row() - 1;
+        int j = moveCoordinates.column() - 1;
+        return field[i][j];
     }
 
     public boolean existsWinningLine() {
@@ -35,6 +41,18 @@ public class Board {
             }
         }
         return true;
+    }
+
+    public List<Coordinates> getAvailableMoves() {
+        List<Coordinates> moves = new ArrayList<>();
+        for (int i = 1; i <= field.length; i++) {
+            for (int j = 1; j <= field.length; j++) {
+                if (field[i-1][j-1] == Symbol.NONE) {
+                    moves.add(new Coordinates(i, j));
+                }
+            }
+        }
+        return moves;
     }
 
     private boolean existsWinningRow() {
@@ -96,18 +114,21 @@ public class Board {
         return true;
     }
 
-    private void checkPositionCorrectness(int row, int column) {
-        if (isPositionOutOfBoard(row, column) || isPositionFilled(row, column))
+    private void checkPositionCorrectness(Coordinates moveCoordinates) {
+        if (isPositionOutOfBoard(moveCoordinates) || isPositionFilled(moveCoordinates))
             throw new IllegalMovePositionException("Position with row %s and column %s is incorrect"
-                    .formatted(row, column));
+                    .formatted(moveCoordinates.row(), moveCoordinates.column()));
     }
 
-    private boolean isPositionOutOfBoard(int row, int column) {
-        return row < 1 || row > field.length || column < 1 || column > field.length;
+    private boolean isPositionOutOfBoard(Coordinates moveCoordinates) {
+        return moveCoordinates.row() < 1 || moveCoordinates.row() > field.length ||
+                moveCoordinates.column() < 1 || moveCoordinates.column() > field.length;
     }
 
-    private boolean isPositionFilled(int row, int column) {
-        return field[row - 1][column - 1] != Symbol.NONE;
+    private boolean isPositionFilled(Coordinates moveCoordinates) {
+        int i = moveCoordinates.row() - 1;
+        int j = moveCoordinates.column() - 1;
+        return field[i][j] != Symbol.NONE;
     }
 
     private void prepareBoard() {

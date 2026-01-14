@@ -1,8 +1,8 @@
 package models;
 
 public enum GameMode {
-    PVP("Игрок vs Игрок"),
-    PVE("Игрок vs Компьютер");
+    PLAYER_VS_PLAYER("Игрок vs Игрок"),
+    PLAYER_VS_COMPUTER("Игрок vs Компьютер");
 
     private final String displayName;
 

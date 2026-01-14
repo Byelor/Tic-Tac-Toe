@@ -1,7 +1,5 @@
 package models;
 
-import services.Board;
-
 public class Game {
     private final Board board;
     private Symbol currentSymbol;
@@ -14,13 +12,13 @@ public class Game {
     }
 
     public void makeMove(Coordinates moveCoordinates) {
-        board.setSymbol(moveCoordinates.row, moveCoordinates.column, currentSymbol);
+        board.setSymbol(moveCoordinates, currentSymbol);
         updateGameStateIfNeeded();
         switchCurrentSymbol();
     }
 
-    public Symbol getSymbol(int row, int column) {
-        return board.getSymbol(row, column);
+    public Board getBoard() {
+        return board;
     }
 
     public GameState getGameState() {

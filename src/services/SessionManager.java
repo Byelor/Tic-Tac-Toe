@@ -5,85 +5,84 @@ import models.*;
 import ui.ProgramScreenHelper;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class SessionManager {
-    private final SessionData data;
-    private final ProgramScreenHelper ui;
+    private final SessionData sessionData;
 
-    private final MoveProvider player1MoveProvider;
-    private final MoveProvider player2MoveProvider;
+    private final MoveProvider firstPlayerMoveProvider;
+    private final MoveProvider secondPlayerMoveProvider;
 
-    public SessionManager(SessionOptions options, ProgramScreenHelper ui) {
-        data = new SessionData(options, new SessionResult());
-        this.ui = ui;
-        this.player1MoveProvider = new HumanMoveProvider(ui);
-        this.player2MoveProvider = options.gameMode() == GameMode.PVE ?
+    public SessionManager(SessionOptions options) {
+        this.sessionData = new SessionData(options);
+        this.firstPlayerMoveProvider = new PlayerMoveProvider();
+        this.secondPlayerMoveProvider = options.gameMode() == GameMode.PLAYER_VS_COMPUTER ?
                 new ComputerMoveProvider() :
-                new HumanMoveProvider(ui);
+                new PlayerMoveProvider();
     }
 
-    public SessionData execute() {
+    public SessionData start() {
         boolean firstPlayerMovesFirst = true;
 
         while (shouldContinueSession()) {
-            GameResultInfo roundResult = playRound(firstPlayerMovesFirst);
+            Optional<GameResultInfo> roundResultInfo = playRound(firstPlayerMovesFirst);
 
-            if (roundResult != null) {
-                data.getResult().addRoundResult(roundResult);
+            if (roundResultInfo.isPresent()) {
+                sessionData.getSessionResult().addRoundResult(roundResultInfo.get().gameResult());
 
-                ui.showRoundResult(data.getOptions(), roundResult, shouldContinueSession());
+                ProgramScreenHelper.showRoundResult(sessionData.getSessionOptions(), roundResultInfo.get(), shouldContinueSession());
 
-                data.incrementCurrentRound();
+                sessionData.incrementCurrentRound();
             } else {
                 // Пользователь выбрал выход
-                ui.showMessage("Сессия прервана");
+                ProgramScreenHelper.showMessage("Сессия прервана");
                 break;
             }
 
             firstPlayerMovesFirst = switchPlayerTurnIfNeeded(firstPlayerMovesFirst);
         }
 
-        return data;
+        return sessionData;
     }
 
-    private boolean switchPlayerTurnIfNeeded(boolean player1MovesFirst) {
-        if (data.getOptions().shouldSwitchPlayerTurn()) {
-            player1MovesFirst = !player1MovesFirst;
+    private boolean switchPlayerTurnIfNeeded(boolean firstPlayerMovesFirst) {
+        if (sessionData.getSessionOptions().shouldSwitchPlayerTurn()) {
+            firstPlayerMovesFirst = !firstPlayerMovesFirst;
         }
-        return player1MovesFirst;
+        return firstPlayerMovesFirst;
     }
 
-    private GameResultInfo playRound(boolean firstPlayerMovesFirst) {
+    private Optional<GameResultInfo> playRound(boolean firstPlayerMovesFirst) {
         Game game = configureRound(firstPlayerMovesFirst);
 
         int totalGameMoveCount = 0;
         boolean firstPlayerMoves = firstPlayerMovesFirst;
 
         while (game.getGameState() == GameState.PLAYING) {
-            ui.drawRoundProcessInfo(data, game);
+            ProgramScreenHelper.drawRoundProcessInfo(sessionData, game.getBoard());
 
             MoveProvider currentMoveProvider = getCurrentMoveProvider(firstPlayerMoves);
 
             // Получаем ход от соответствующего источника
-            Coordinates moveCoordinates = currentMoveProvider.getMove(game, data.getOptions().fieldSize());
+            Optional<Coordinates> moveCoordinates = currentMoveProvider.getMove(game.getBoard());
 
-            if (moveCoordinates == null) {
-                return null; // Пользователь выбрал выход
+            if (moveCoordinates.isEmpty()) {
+                return Optional.empty(); // Пользователь выбрал выход
             }
 
             try {
-                game.makeMove(moveCoordinates);
+                game.makeMove(moveCoordinates.get());
                 switchCurrentPlayerName();
                 totalGameMoveCount++;
                 firstPlayerMoves = !firstPlayerMoves;
             }
             catch (IllegalMovePositionException e){
-                ui.showMessage("Недопустимый ход! Попробуйте снова.");
+                ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
 
-        GameResultInfo.GameResult gameResult = determineGameResult(game);
-        return new GameResultInfo(gameResult, totalGameMoveCount);
+        GameResult gameResult = determineGameResult(game.getGameState());
+        return Optional.of(new GameResultInfo(gameResult, totalGameMoveCount));
     }
 
     private Game configureRound(boolean firstPlayerMovesFirst) {
@@ -91,44 +90,45 @@ public class SessionManager {
         String firstMovePlayerName;
 
         if(firstPlayerMovesFirst) {
-            firstMovePlayerSymbol = data.getOptions().firstPlayerSymbol();
-            firstMovePlayerName = data.getOptions().firstPlayerName();
+            firstMovePlayerSymbol = sessionData.getSessionOptions().firstPlayerSymbol();
+            firstMovePlayerName = sessionData.getSessionOptions().firstPlayerName();
         }
         else {
-            firstMovePlayerSymbol = data.getOptions().secondPlayerSymbol();
-            firstMovePlayerName = data.getOptions().secondPlayerName();
+            firstMovePlayerSymbol = sessionData.getSessionOptions().secondPlayerSymbol();
+            firstMovePlayerName = sessionData.getSessionOptions().secondPlayerName();
         }
 
-        ui.showRoundStartInfo(firstMovePlayerName, firstMovePlayerSymbol);
+        ProgramScreenHelper.showRoundStartInfo(firstMovePlayerName, firstMovePlayerSymbol);
 
         boolean crossesStarts = (firstMovePlayerSymbol == Symbol.CROSS);
-        Game game = new Game(data.getOptions().fieldSize(), crossesStarts);
+        Game game = new Game(sessionData.getSessionOptions().fieldSize(), crossesStarts);
 
-        data.setCurrentPlayerName(firstMovePlayerName);
+        sessionData.setCurrentPlayerName(firstMovePlayerName);
         return game;
     }
 
     private void switchCurrentPlayerName() {
-        if(Objects.equals(data.getCurrentPlayerName(), data.getOptions().firstPlayerName()))
-            data.setCurrentPlayerName(data.getOptions().secondPlayerName());
+        SessionOptions sessionOptions = sessionData.getSessionOptions();
+        if(Objects.equals(sessionData.getCurrentPlayerName(), sessionOptions.firstPlayerName()))
+            sessionData.setCurrentPlayerName(sessionOptions.secondPlayerName());
         else
-            data.setCurrentPlayerName(data.getOptions().firstPlayerName());
+            sessionData.setCurrentPlayerName(sessionOptions.firstPlayerName());
     }
 
-    private MoveProvider getCurrentMoveProvider(boolean player1Moves) {
-        return player1Moves ? player1MoveProvider : player2MoveProvider;
+    private MoveProvider getCurrentMoveProvider(boolean firstPlayerMoves) {
+        return firstPlayerMoves ? firstPlayerMoveProvider : secondPlayerMoveProvider;
     }
 
-    private GameResultInfo.GameResult determineGameResult(Game game) {
-        GameState gameState = game.getGameState();
-        if (gameState == GameState.CROSSES_WON) {
-            return (data.getOptions().firstPlayerSymbol() == Symbol.CROSS) ?
-                    GameResultInfo.GameResult.PLAYER1 : GameResultInfo.GameResult.PLAYER2;
-        } else if (gameState == GameState.ZEROES_WON) {
-            return (data.getOptions().firstPlayerSymbol() == Symbol.ZERO) ?
-                    GameResultInfo.GameResult.PLAYER1 : GameResultInfo.GameResult.PLAYER2;
+    private GameResult determineGameResult(GameState currentGameState) {
+        Symbol firstPlayerSymbol = sessionData.getSessionOptions().firstPlayerSymbol();
+        if (currentGameState == GameState.CROSSES_WON) {
+            return firstPlayerSymbol == Symbol.CROSS ?
+                    GameResult.PLAYER1 : GameResult.PLAYER2;
+        } else if (currentGameState == GameState.ZEROES_WON) {
+            return firstPlayerSymbol == Symbol.ZERO ?
+                    GameResult.PLAYER1 : GameResult.PLAYER2;
         } else {
-            return GameResultInfo.GameResult.DRAW;
+            return GameResult.DRAW;
         }
     }
 
@@ -136,12 +136,18 @@ public class SessionManager {
         if (expectedCountOfWinsIsNotDefined()) {
             return true;
         } else {
-            return data.getResult().getFirstPlayerWinsCount() < data.getOptions().expectedCountOfWins() &&
-                    data.getResult().getSecondPlayerWinsCount() < data.getOptions().expectedCountOfWins();
+            int expectedCountOfWins = sessionData.getSessionOptions().expectedCountOfWins();
+            SessionResult currentSessionResult = sessionData.getSessionResult();
+            return isExpectedCountOfWinsNotAchieved(currentSessionResult, expectedCountOfWins);
         }
     }
 
     private boolean expectedCountOfWinsIsNotDefined() {
-        return data.getOptions().expectedCountOfWins() == 0;
+        return sessionData.getSessionOptions().expectedCountOfWins() == 0;
+    }
+
+    private boolean isExpectedCountOfWinsNotAchieved(SessionResult currentSessionResult, int expectedCountOfWins) {
+        return currentSessionResult.getFirstPlayerWinsCount() < expectedCountOfWins
+                && currentSessionResult.getSecondPlayerWinsCount() < expectedCountOfWins;
     }
 }

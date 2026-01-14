@@ -1,8 +1,9 @@
 package services;
 
+import models.Board;
 import models.Coordinates;
-import models.Game;
+import java.util.Optional;
 
 public interface MoveProvider {
-    Coordinates getMove(Game game, int boardSize);
+    Optional<Coordinates> getMove(Board board);
 }

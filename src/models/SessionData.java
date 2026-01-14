@@ -1,22 +1,23 @@
 package models;
 
 public class SessionData {
-    private final SessionOptions options;
-    private final SessionResult result;
-    private int currentRound = 1;
+    private final SessionOptions sessionOptions;
+    private final SessionResult sessionResult;
+    private int currentRound;
     private String currentPlayerName;
 
-    public SessionData(SessionOptions options, SessionResult result) {
-        this.options = options;
-        this.result = result;
+    public SessionData(SessionOptions options) {
+        this.sessionOptions = options;
+        this.sessionResult = new SessionResult();
+        currentRound = 1;
     }
 
-    public SessionOptions getOptions() {
-        return options;
+    public SessionOptions getSessionOptions() {
+        return sessionOptions;
     }
 
-    public SessionResult getResult() {
-        return result;
+    public SessionResult getSessionResult() {
+        return sessionResult;
     }
 
     public int getCurrentRound() {
