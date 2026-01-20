@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Board {
+
     private final Symbol[][] field;
 
     public Board(int boardSize) {
@@ -37,7 +38,9 @@ public class Board {
     public boolean isFieldFilled() {
         for (Symbol[] row : field) {
             for (Symbol cell : row) {
-                if (cell == Symbol.NONE) return false;
+                if (cell == Symbol.NONE) {
+                    return false;
+                }
             }
         }
         return true;
@@ -65,8 +68,9 @@ public class Board {
                         break;
                     }
                 }
-                if (winning)
+                if (winning) {
                     return true;
+                }
             }
         }
         return false;
@@ -82,7 +86,9 @@ public class Board {
                         break;
                     }
                 }
-                if (winning) return true;
+                if (winning) {
+                    return true;
+                }
             }
         }
         return false;
@@ -94,11 +100,14 @@ public class Board {
 
     private boolean isWinningMainDiagonal() {
         Symbol first = field[0][0];
-        if (first == Symbol.NONE) return false;
+        if (first == Symbol.NONE) {
+            return false;
+        }
 
         for (int i = 1; i < field.length; i++)
-            if (field[i][i] != first)
+            if (field[i][i] != first) {
                 return false;
+            }
 
         return true;
     }
@@ -106,18 +115,22 @@ public class Board {
     private boolean isWinningAntiDiagonal() {
         int lastIndex = field.length - 1;
         Symbol first = field[0][lastIndex];
-        if (first == Symbol.NONE) return false;
+        if (first == Symbol.NONE) {
+            return false;
+        }
 
         for (int i = 1; i < field.length; i++)
-            if (field[i][lastIndex - i] != first)
+            if (field[i][lastIndex - i] != first) {
                 return false;
+            }
         return true;
     }
 
     private void checkPositionCorrectness(Coordinates moveCoordinates) {
-        if (isPositionOutOfBoard(moveCoordinates) || isPositionFilled(moveCoordinates))
+        if (isPositionOutOfBoard(moveCoordinates) || isPositionFilled(moveCoordinates)) {
             throw new IllegalMovePositionException("Position with row %s and column %s is incorrect"
                     .formatted(moveCoordinates.row(), moveCoordinates.column()));
+        }
     }
 
     private boolean isPositionOutOfBoard(Coordinates moveCoordinates) {

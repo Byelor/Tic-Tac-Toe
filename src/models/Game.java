@@ -1,6 +1,7 @@
 package models;
 
 public class Game {
+
     private final Board board;
     private Symbol currentSymbol;
     private GameState gameState;

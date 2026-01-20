@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Scanner;
 
 public class ProgramScreenHelper {
+
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void showWelcomeMessage() {
@@ -626,8 +627,8 @@ public class ProgramScreenHelper {
 
     private static String getRoundResultMessage(SessionOptions options, GameResultInfo roundResult) {
         return switch(roundResult.gameResult()) {
-            case PLAYER1 -> "Победил " + options.firstPlayerName() + "!";
-            case PLAYER2 -> "Победил " + options.secondPlayerName() + "!";
+            case FIRST_PLAYER_WON -> "Победил " + options.firstPlayerName() + "!";
+            case SECOND_PLAYER_WON -> "Победил " + options.secondPlayerName() + "!";
             case DRAW -> "Ничья!";
         };
     }

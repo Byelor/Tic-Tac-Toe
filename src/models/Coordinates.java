@@ -1,7 +1,3 @@
 package models;
 
-public record Coordinates(
-        int row,
-        int column
-    )
-{ }
+public record Coordinates(int row, int column) { }

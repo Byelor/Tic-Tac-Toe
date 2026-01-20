@@ -8,17 +8,17 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class SessionManager {
-    private final SessionData sessionData;
 
+    private final SessionData sessionData;
     private final MoveProvider firstPlayerMoveProvider;
     private final MoveProvider secondPlayerMoveProvider;
 
     public SessionManager(SessionOptions options) {
         this.sessionData = new SessionData(options);
         this.firstPlayerMoveProvider = new PlayerMoveProvider();
-        this.secondPlayerMoveProvider = options.gameMode() == GameMode.PLAYER_VS_COMPUTER ?
-                new ComputerMoveProvider() :
-                new PlayerMoveProvider();
+        this.secondPlayerMoveProvider = options.gameMode() == GameMode.PLAYER_VS_COMPUTER
+                ? new ComputerMoveProvider()
+                : new PlayerMoveProvider();
     }
 
     public SessionData start() {
@@ -28,28 +28,21 @@ public class SessionManager {
             Optional<GameResultInfo> roundResultInfo = playRound(firstPlayerMovesFirst);
 
             if (roundResultInfo.isPresent()) {
-                sessionData.getSessionResult().addRoundResult(roundResultInfo.get().gameResult());
+                updateSessionData(roundResultInfo.get());
+                firstPlayerMovesFirst = switchPlayerTurnIfNeeded(firstPlayerMovesFirst);
 
                 ProgramScreenHelper.showRoundResult(sessionData.getSessionOptions(), roundResultInfo.get(), shouldContinueSession());
-
-                sessionData.incrementCurrentRound();
             } else {
-                // Пользователь выбрал выход
-                ProgramScreenHelper.showMessage("Сессия прервана");
                 break;
             }
-
-            firstPlayerMovesFirst = switchPlayerTurnIfNeeded(firstPlayerMovesFirst);
         }
 
         return sessionData;
     }
 
-    private boolean switchPlayerTurnIfNeeded(boolean firstPlayerMovesFirst) {
-        if (sessionData.getSessionOptions().shouldSwitchPlayerTurn()) {
-            firstPlayerMovesFirst = !firstPlayerMovesFirst;
-        }
-        return firstPlayerMovesFirst;
+    private void updateSessionData(GameResultInfo roundResultInfo) {
+        sessionData.getSessionResult().addRoundResult(roundResultInfo.gameResult());
+        sessionData.incrementCurrentRound();
     }
 
     private Optional<GameResultInfo> playRound(boolean firstPlayerMovesFirst) {
@@ -67,7 +60,8 @@ public class SessionManager {
             Optional<Coordinates> moveCoordinates = currentMoveProvider.getMove(game.getBoard());
 
             if (moveCoordinates.isEmpty()) {
-                return Optional.empty(); // Пользователь выбрал выход
+                ProgramScreenHelper.showMessage("Сессия прервана");
+                return Optional.empty();
             }
 
             try {
@@ -75,8 +69,7 @@ public class SessionManager {
                 switchCurrentPlayerName();
                 totalGameMoveCount++;
                 firstPlayerMoves = !firstPlayerMoves;
-            }
-            catch (IllegalMovePositionException e){
+            } catch (IllegalMovePositionException e){
                 ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
@@ -109,10 +102,12 @@ public class SessionManager {
 
     private void switchCurrentPlayerName() {
         SessionOptions sessionOptions = sessionData.getSessionOptions();
-        if(Objects.equals(sessionData.getCurrentPlayerName(), sessionOptions.firstPlayerName()))
+        if(Objects.equals(sessionData.getCurrentPlayerName(), sessionOptions.firstPlayerName())) {
             sessionData.setCurrentPlayerName(sessionOptions.secondPlayerName());
-        else
+        }
+        else {
             sessionData.setCurrentPlayerName(sessionOptions.firstPlayerName());
+        }
     }
 
     private MoveProvider getCurrentMoveProvider(boolean firstPlayerMoves) {
@@ -121,15 +116,15 @@ public class SessionManager {
 
     private GameResult determineGameResult(GameState currentGameState) {
         Symbol firstPlayerSymbol = sessionData.getSessionOptions().firstPlayerSymbol();
-        if (currentGameState == GameState.CROSSES_WON) {
-            return firstPlayerSymbol == Symbol.CROSS ?
-                    GameResult.PLAYER1 : GameResult.PLAYER2;
-        } else if (currentGameState == GameState.ZEROES_WON) {
-            return firstPlayerSymbol == Symbol.ZERO ?
-                    GameResult.PLAYER1 : GameResult.PLAYER2;
-        } else {
-            return GameResult.DRAW;
-        }
+
+        return switch(currentGameState) {
+            case CROSSES_WON ->
+                firstPlayerSymbol == Symbol.CROSS ? GameResult.FIRST_PLAYER_WON : GameResult.SECOND_PLAYER_WON;
+            case ZEROES_WON ->
+                firstPlayerSymbol == Symbol.ZERO ? GameResult.FIRST_PLAYER_WON : GameResult.SECOND_PLAYER_WON;
+            default ->
+                GameResult.DRAW;
+        };
     }
 
     private boolean shouldContinueSession() {
@@ -149,5 +144,12 @@ public class SessionManager {
     private boolean isExpectedCountOfWinsNotAchieved(SessionResult currentSessionResult, int expectedCountOfWins) {
         return currentSessionResult.getFirstPlayerWinsCount() < expectedCountOfWins
                 && currentSessionResult.getSecondPlayerWinsCount() < expectedCountOfWins;
+    }
+
+    private boolean switchPlayerTurnIfNeeded(boolean firstPlayerMovesFirst) {
+        if (sessionData.getSessionOptions().shouldSwitchPlayerTurn()) {
+            firstPlayerMovesFirst = !firstPlayerMovesFirst;
+        }
+        return firstPlayerMovesFirst;
     }
 }

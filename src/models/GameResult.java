@@ -1,5 +1,5 @@
 package models;
 
 public enum GameResult {
-    PLAYER1, PLAYER2, DRAW
+    FIRST_PLAYER_WON, SECOND_PLAYER_WON, DRAW
 }

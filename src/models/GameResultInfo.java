@@ -1,7 +1,3 @@
 package models;
 
-public record GameResultInfo(
-        GameResult gameResult,
-        int totalGameMovesCount
-    )
-{ }
+public record GameResultInfo(GameResult gameResult, int totalGameMovesCount) { }

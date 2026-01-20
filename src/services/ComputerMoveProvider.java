@@ -8,17 +8,19 @@ import java.util.Optional;
 import java.util.Random;
 
 public class ComputerMoveProvider implements MoveProvider {
+
     private final Random random = new Random();
 
     @Override
     public Optional<Coordinates> getMove(Board board) {
         List<Coordinates> availableMoves = board.getAvailableMoves();
 
-        if (availableMoves.isEmpty()) {
-            return Optional.empty();
-        }
+        return !availableMoves.isEmpty()
+                ? Optional.of(getRandomCoordinates(availableMoves))
+                : Optional.empty();
+    }
 
-        // Рандомный ход
-        return Optional.of(availableMoves.get(random.nextInt(availableMoves.size())));
+    private Coordinates getRandomCoordinates(List<Coordinates> availableMoves) {
+        return availableMoves.get(random.nextInt(availableMoves.size()));
     }
 }

@@ -1,6 +1,7 @@
 package models;
 
 public class SessionData {
+
     private final SessionOptions sessionOptions;
     private final SessionResult sessionResult;
     private int currentRound;
