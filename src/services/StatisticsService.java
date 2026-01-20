@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 public class StatisticsService {
+
     private static final String STATS_FILE = "tictactoe_stats.txt";
     private static final String STATS_DIR = "data";
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -72,7 +73,7 @@ public class StatisticsService {
 
         return new Statistics(sessions, totalRounds);
     }
-    
+
     private String formatSessionRecord(SessionData data) {
         return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
                 "game_mode=" + data.getSessionOptions().gameMode() + "\n" +
