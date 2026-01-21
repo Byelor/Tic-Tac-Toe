@@ -4,7 +4,6 @@ import models.SessionData;
 import models.Statistics;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,11 +76,11 @@ public class StatisticsService {
     private String formatSessionRecord(SessionData data) {
         return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
                 "game_mode=" + data.getSessionOptions().gameMode() + "\n" +
-                "field_size=" + data.getSessionOptions().fieldSize() + "\n" +
-                "player1_name=" + data.getSessionOptions().firstPlayerName() + "\n" +
-                "player2_name=" + data.getSessionOptions().secondPlayerName() + "\n" +
-                "player1_symbol=" + data.getSessionOptions().firstPlayerSymbol() + "\n" +
-                "player2_symbol=" + data.getSessionOptions().secondPlayerSymbol() + "\n" +
+                "field_size=" + data.getSessionOptions().boardSize() + "\n" +
+                "player1_name=" + data.getSessionOptions().firstPlayer().name() + "\n" +
+                "player2_name=" + data.getSessionOptions().secondPlayer().name() + "\n" +
+                "player1_symbol=" + data.getSessionOptions().firstPlayer().symbol() + "\n" +
+                "player2_symbol=" + data.getSessionOptions().secondPlayer().symbol() + "\n" +
                 "wins_to_complete=" + data.getSessionOptions().expectedCountOfWins() + "\n" +
                 "total_rounds=" + data.getSessionResult().getTotalRounds() + "\n" +
                 "player1_wins=" + data.getSessionResult().getFirstPlayerWinsCount() + "\n" +
