@@ -4,34 +4,23 @@ import exceptions.IllegalMovePositionException;
 import models.*;
 import ui.ProgramScreenHelper;
 
-import java.util.Objects;
 import java.util.Optional;
 
 public class SessionManager {
 
     private final SessionData sessionData;
-    private final MoveProvider firstPlayerMoveProvider;
-    private final MoveProvider secondPlayerMoveProvider;
 
     public SessionManager(SessionOptions options) {
         this.sessionData = new SessionData(options);
-        this.firstPlayerMoveProvider = new PlayerMoveProvider();
-        this.secondPlayerMoveProvider = options.gameMode() == GameMode.PLAYER_VS_COMPUTER
-                ? new ComputerMoveProvider()
-                : new PlayerMoveProvider();
     }
 
     public SessionData start() {
-        boolean firstPlayerMovesFirst = true;
-
         while (shouldContinueSession()) {
-            Optional<GameResultInfo> roundResultInfo = playRound(firstPlayerMovesFirst);
+            GameResultInfo roundResultInfo = playRound();
+            ProgramScreenHelper.showRoundResult(sessionData.getSessionOptions(), roundResultInfo, shouldContinueSession());
 
-            if (roundResultInfo.isPresent()) {
-                updateSessionData(roundResultInfo.get());
-                firstPlayerMovesFirst = switchPlayerTurnIfNeeded(firstPlayerMovesFirst);
-
-                ProgramScreenHelper.showRoundResult(sessionData.getSessionOptions(), roundResultInfo.get(), shouldContinueSession());
+            if (roundResultInfo.gameResult() != GameResult.TERMINATED) {
+                updateSessionData(roundResultInfo);
             } else {
                 break;
             }
@@ -45,77 +34,48 @@ public class SessionManager {
         sessionData.incrementCurrentRound();
     }
 
-    private Optional<GameResultInfo> playRound(boolean firstPlayerMovesFirst) {
-        Game game = configureRound(firstPlayerMovesFirst);
+    private GameResultInfo playRound() {
+        configureRound();
+        Game game = configureGame();
 
         int totalGameMoveCount = 0;
-        boolean firstPlayerMoves = firstPlayerMovesFirst;
 
         while (game.getGameState() == GameState.PLAYING) {
             ProgramScreenHelper.drawRoundProcessInfo(sessionData, game.getBoard());
 
-            MoveProvider currentMoveProvider = getCurrentMoveProvider(firstPlayerMoves);
-
-            // Получаем ход от соответствующего источника
+            MoveProvider currentMoveProvider = sessionData.getCurrentPlayer().provider();
             Optional<Coordinates> moveCoordinates = currentMoveProvider.getMove(game.getBoard());
 
             if (moveCoordinates.isEmpty()) {
-                ProgramScreenHelper.showMessage("Сессия прервана");
-                return Optional.empty();
+                return new GameResultInfo(GameResult.TERMINATED, totalGameMoveCount);
             }
 
             try {
                 game.makeMove(moveCoordinates.get());
-                switchCurrentPlayerName();
+                switchCurrentPlayer();
                 totalGameMoveCount++;
-                firstPlayerMoves = !firstPlayerMoves;
             } catch (IllegalMovePositionException e){
                 ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
 
         GameResult gameResult = determineGameResult(game.getGameState());
-        return Optional.of(new GameResultInfo(gameResult, totalGameMoveCount));
+        return new GameResultInfo(gameResult, totalGameMoveCount);
     }
 
-    private Game configureRound(boolean firstPlayerMovesFirst) {
-        Symbol firstMovePlayerSymbol;
-        String firstMovePlayerName;
-
-        if(firstPlayerMovesFirst) {
-            firstMovePlayerSymbol = sessionData.getSessionOptions().firstPlayerSymbol();
-            firstMovePlayerName = sessionData.getSessionOptions().firstPlayerName();
-        }
-        else {
-            firstMovePlayerSymbol = sessionData.getSessionOptions().secondPlayerSymbol();
-            firstMovePlayerName = sessionData.getSessionOptions().secondPlayerName();
-        }
-
-        ProgramScreenHelper.showRoundStartInfo(firstMovePlayerName, firstMovePlayerSymbol);
-
-        boolean crossesStarts = (firstMovePlayerSymbol == Symbol.CROSS);
-        Game game = new Game(sessionData.getSessionOptions().fieldSize(), crossesStarts);
-
-        sessionData.setCurrentPlayerName(firstMovePlayerName);
-        return game;
+    private void configureRound() {
+        setFirstMovePlayer();
+        ProgramScreenHelper.showRoundStartInfo(sessionData.getCurrentPlayer());
     }
 
-    private void switchCurrentPlayerName() {
-        SessionOptions sessionOptions = sessionData.getSessionOptions();
-        if(Objects.equals(sessionData.getCurrentPlayerName(), sessionOptions.firstPlayerName())) {
-            sessionData.setCurrentPlayerName(sessionOptions.secondPlayerName());
-        }
-        else {
-            sessionData.setCurrentPlayerName(sessionOptions.firstPlayerName());
-        }
-    }
-
-    private MoveProvider getCurrentMoveProvider(boolean firstPlayerMoves) {
-        return firstPlayerMoves ? firstPlayerMoveProvider : secondPlayerMoveProvider;
+    private Game configureGame() {
+        int boardSize = sessionData.getSessionOptions().boardSize();
+        boolean crossesStarts = sessionData.getCurrentPlayer().symbol() == Symbol.CROSS;
+        return new Game(boardSize, crossesStarts);
     }
 
     private GameResult determineGameResult(GameState currentGameState) {
-        Symbol firstPlayerSymbol = sessionData.getSessionOptions().firstPlayerSymbol();
+        Symbol firstPlayerSymbol = sessionData.getSessionOptions().firstPlayer().symbol();
 
         return switch(currentGameState) {
             case CROSSES_WON ->
@@ -146,10 +106,32 @@ public class SessionManager {
                 && currentSessionResult.getSecondPlayerWinsCount() < expectedCountOfWins;
     }
 
-    private boolean switchPlayerTurnIfNeeded(boolean firstPlayerMovesFirst) {
-        if (sessionData.getSessionOptions().shouldSwitchPlayerTurn()) {
-            firstPlayerMovesFirst = !firstPlayerMovesFirst;
+    private void setFirstMovePlayer() {
+        Player firstPlayer = sessionData.getSessionOptions().firstPlayer();
+        Player secondPlayer = sessionData.getSessionOptions().secondPlayer();
+        boolean switchNeeded = sessionData.getSessionOptions().shouldSwitchPlayerTurn();
+        boolean isEvenRound = sessionData.getCurrentRound() % 2 == 0;
+
+        if (switchNeeded) {
+            if(isEvenRound) {
+                sessionData.setCurrentPlayer(secondPlayer);
+            }
+            else {
+                sessionData.setCurrentPlayer(firstPlayer);
+            }
         }
-        return firstPlayerMovesFirst;
+    }
+
+    private void switchCurrentPlayer() {
+        Player firstPlayer = sessionData.getSessionOptions().firstPlayer();
+        Player secondPlayer = sessionData.getSessionOptions().secondPlayer();
+        Player currentPlayer = sessionData.getCurrentPlayer();
+
+        if(currentPlayer == firstPlayer) {
+            sessionData.setCurrentPlayer(secondPlayer);
+        }
+        else {
+            sessionData.setCurrentPlayer(firstPlayer);
+        }
     }
 }

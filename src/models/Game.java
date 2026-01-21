@@ -27,23 +27,27 @@ public class Game {
     }
 
     private void switchCurrentSymbol() {
-        if (currentSymbol == Symbol.CROSS)
+        if (currentSymbol == Symbol.CROSS) {
             currentSymbol = Symbol.ZERO;
-        else
+        }
+        else {
             currentSymbol = Symbol.CROSS;
+        }
     }
 
     private void updateGameStateIfNeeded() {
-        if (board.existsWinningLine())
+        if (board.existsWinningLine()) {
             setWinner(currentSymbol);
-        else if (board.isFieldFilled())
+        } else if (board.isFieldFilled()) {
             gameState = GameState.DRAW;
+        }
     }
 
     private void setWinner(Symbol figureWinner) {
-        if (figureWinner == Symbol.CROSS)
+        if (figureWinner == Symbol.CROSS) {
             gameState = GameState.CROSSES_WON;
-        else
+        } else {
             gameState = GameState.ZEROES_WON;
+        }
     }
 }

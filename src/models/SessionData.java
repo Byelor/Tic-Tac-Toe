@@ -5,7 +5,7 @@ public class SessionData {
     private final SessionOptions sessionOptions;
     private final SessionResult sessionResult;
     private int currentRound;
-    private String currentPlayerName;
+    private Player currentPlayer;
 
     public SessionData(SessionOptions options) {
         this.sessionOptions = options;
@@ -25,15 +25,15 @@ public class SessionData {
         return currentRound;
     }
 
-    public String getCurrentPlayerName() {
-        return currentPlayerName;
+    public Player getCurrentPlayer() {
+        return currentPlayer;
     }
 
     public void incrementCurrentRound() {
         currentRound++;
     }
 
-    public void setCurrentPlayerName(String currentPlayerName) {
-        this.currentPlayerName = currentPlayerName;
+    public void setCurrentPlayer(Player currentPlayer) {
+        this.currentPlayer = currentPlayer;
     }
 }

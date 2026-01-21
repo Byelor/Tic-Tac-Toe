@@ -2,6 +2,8 @@ package ui;
 
 import models.*;
 import models.Board;
+import services.ComputerMoveProvider;
+import services.PlayerMoveProvider;
 
 import java.util.List;
 import java.util.Optional;
@@ -84,7 +86,7 @@ public class ProgramScreenHelper {
         GameMode currentGameMode = SessionOptions.DEFAULT_GAME_MODE;
         String currentFirstPlayerName = SessionOptions.DEFAULT_FIRST_PLAYER_NAME;
         String currentSecondPlayerName = SessionOptions.DEFAULT_SECOND_PLAYER_NAME;
-        int currentFieldSize = SessionOptions.DEFAULT_FIELD_SIZE;
+        int currentFieldSize = SessionOptions.DEFAULT_BOARD_SIZE;
         Symbol currentFirstPlayerSymbol = SessionOptions.DEFAULT_FIRST_PLAYER_SYMBOL;
         boolean currentShouldSwitchPlayerTurn = SessionOptions.DEFAULT_SHOULD_SWITCH_PLAYER_TURN;
         int currentExpectedCountOfWins = SessionOptions.DEFAULT_EXPECTED_COUNT_OF_WINS;
@@ -162,17 +164,17 @@ public class ProgramScreenHelper {
             }
         }
 
-        Symbol currentPlayer2Symbol = currentFirstPlayerSymbol == Symbol.CROSS ? Symbol.ZERO : Symbol.CROSS;
+        Symbol currentSecondPlayerSymbol = currentFirstPlayerSymbol == Symbol.CROSS ? Symbol.ZERO : Symbol.CROSS;
 
         return new SessionOptions(
                 currentGameMode,
                 currentFieldSize,
-                currentFirstPlayerSymbol,
-                currentPlayer2Symbol,
+                new Player(currentFirstPlayerSymbol, currentFirstPlayerName, new PlayerMoveProvider()),
+                new Player(currentSecondPlayerSymbol, currentSecondPlayerName, currentGameMode == GameMode.PLAYER_VS_PLAYER
+                        ? new PlayerMoveProvider()
+                        : new ComputerMoveProvider()),
                 currentShouldSwitchPlayerTurn,
-                currentExpectedCountOfWins,
-                currentFirstPlayerName,
-                currentSecondPlayerName
+                currentExpectedCountOfWins
         );
     }
 
@@ -332,6 +334,8 @@ public class ProgramScreenHelper {
     }
 
     public static void showSessionSummary(SessionData data){
+        SessionOptions options = data.getSessionOptions();
+        SessionResult result = data.getSessionResult();
         clearScreen();
 
         System.out.println();
@@ -340,31 +344,31 @@ public class ProgramScreenHelper {
         System.out.println("╚════════════════════════════════════════╝\n");
 
         System.out.println("  Настройки сессии:");
-        System.out.println("  Режим: " + data.getSessionOptions().gameMode());
-        System.out.println("  Поле: " + data.getSessionOptions().fieldSize() + "x" + data.getSessionOptions().fieldSize());
-        System.out.println("  Игрок 1: " + data.getSessionOptions().firstPlayerName() + " (" + data.getSessionOptions().firstPlayerSymbol() + ")");
-        System.out.println("  Игрок 2: " + data.getSessionOptions().secondPlayerName() + " (" + data.getSessionOptions().secondPlayerSymbol() + ")");
-        System.out.println("  Формат: " + getGameFormatText(data.getSessionOptions().expectedCountOfWins()));
+        System.out.println("  Режим: " + options.gameMode());
+        System.out.println("  Поле: " + options.boardSize() + "x" + options.boardSize());
+        System.out.println("  Игрок 1: " + options.firstPlayer().name() + " (" + options.firstPlayer().symbol() + ")");
+        System.out.println("  Игрок 2: " + options.secondPlayer().name() + " (" + options.secondPlayer().symbol() + ")");
+        System.out.println("  Формат: " + getGameFormatText(options.expectedCountOfWins()));
         System.out.println();
         System.out.println("═".repeat(44));
         System.out.println();
 
         System.out.println("  Результаты:");
-        System.out.printf("    Всего раундов: %-20d\n", data.getSessionResult().getTotalRounds());
-        System.out.printf("    Побед %s: %-23d\n", data.getSessionOptions().firstPlayerName(), data.getSessionResult().getFirstPlayerWinsCount());
-        System.out.printf("    Побед %s: %-23d\n", data.getSessionOptions().secondPlayerName(), data.getSessionResult().getSecondPlayerWinsCount());
-        System.out.printf("    Ничьих: %-28d\n", data.getSessionResult().getDrawsCount());
+        System.out.printf("    Всего раундов: %-20d\n", result.getTotalRounds());
+        System.out.printf("    Побед %s: %-23d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
+        System.out.printf("    Побед %s: %-23d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
+        System.out.printf("    Ничьих: %-28d\n", result.getDrawsCount());
         System.out.println();
 
         // Расчет процентов
-        if (data.getSessionResult().getTotalRounds() > 0) {
-            double p1Percent = (double) data.getSessionResult().getFirstPlayerWinsCount() / data.getSessionResult().getTotalRounds() * 100;
-            double p2Percent = (double) data.getSessionResult().getSecondPlayerWinsCount() / data.getSessionResult().getTotalRounds() * 100;
-            double drawPercent = (double) data.getSessionResult().getDrawsCount() / data.getSessionResult().getTotalRounds() * 100;
+        if (result.getTotalRounds() > 0) {
+            double p1Percent = (double) result.getFirstPlayerWinsCount() / result.getTotalRounds() * 100;
+            double p2Percent = (double) result.getSecondPlayerWinsCount() / result.getTotalRounds() * 100;
+            double drawPercent = (double) result.getDrawsCount() / result.getTotalRounds() * 100;
 
             System.out.println("  Процентные соотношения:");
-            System.out.printf("    %s: %.1f%%\n", data.getSessionOptions().firstPlayerName(), p1Percent);
-            System.out.printf("    %s: %.1f%%\n", data.getSessionOptions().secondPlayerName(), p2Percent);
+            System.out.printf("    %s: %.1f%%\n", options.firstPlayer().name(), p1Percent);
+            System.out.printf("    %s: %.1f%%\n", options.secondPlayer().name(), p2Percent);
             System.out.printf("    Ничьи: %.1f%%\n", drawPercent);
             System.out.println();
         }
@@ -382,19 +386,21 @@ public class ProgramScreenHelper {
 
     private static String getSessionWinner(SessionData data) {
         String sessionWinner;
-        if (data.getSessionOptions().expectedCountOfWins() > 0) {
-            if (data.getSessionResult().getFirstPlayerWinsCount() >= data.getSessionOptions().expectedCountOfWins()) {
-                sessionWinner = data.getSessionOptions().firstPlayerName() + " победил в серии!";
-            } else if (data.getSessionResult().getSecondPlayerWinsCount() >= data.getSessionOptions().expectedCountOfWins()) {
-                sessionWinner = data.getSessionOptions().secondPlayerName() + " победил в серии!";
+        SessionOptions options = data.getSessionOptions();
+        SessionResult result = data.getSessionResult();
+        if (options.expectedCountOfWins() > 0) {
+            if (result.getFirstPlayerWinsCount() >= options.expectedCountOfWins()) {
+                sessionWinner = options.firstPlayer().name() + " победил в серии!";
+            } else if (result.getSecondPlayerWinsCount() >= options.expectedCountOfWins()) {
+                sessionWinner = options.secondPlayer().name() + " победил в серии!";
             } else {
                 sessionWinner = "Серия не завершена";
             }
         } else {
-            if (data.getSessionResult().getFirstPlayerWinsCount() > data.getSessionResult().getSecondPlayerWinsCount()) {
-                sessionWinner = data.getSessionOptions().firstPlayerName() + " победил!";
-            } else if (data.getSessionResult().getSecondPlayerWinsCount() > data.getSessionResult().getFirstPlayerWinsCount()) {
-                sessionWinner = data.getSessionOptions().secondPlayerName() + " победил!";
+            if (result.getFirstPlayerWinsCount() > result.getSecondPlayerWinsCount()) {
+                sessionWinner = options.firstPlayer().name() + " победил!";
+            } else if (result.getSecondPlayerWinsCount() > result.getFirstPlayerWinsCount()) {
+                sessionWinner = options.secondPlayer().name() + " победил!";
             } else {
                 sessionWinner = "Ничья!";
             }
@@ -575,19 +581,21 @@ public class ProgramScreenHelper {
         scanner.nextLine();
     }
 
-    public static void showRoundStartInfo(String firstMovePlayerName, Symbol firstMovePlayerSymbol) {
+    public static void showRoundStartInfo(Player firstMovePlayer) {
         clearScreen();
         System.out.println();
         System.out.println("╔════════════════════════════════════════╗");
         System.out.println("║          НАЧАЛО РАУНДА                 ║");
         System.out.println("╚════════════════════════════════════════╝\n");
-        System.out.println("  Первым ходит: " + firstMovePlayerName + " (" + firstMovePlayerSymbol + ")");
+        System.out.println("  Первым ходит: " + firstMovePlayer.name() + " (" + firstMovePlayer.symbol() + ")");
         System.out.println();
         System.out.print("  Нажмите Enter для начала...");
         scanner.nextLine();
     }
 
     public static void drawRoundProcessInfo(SessionData data, Board board) {
+        SessionOptions options = data.getSessionOptions();
+        SessionResult result = data.getSessionResult();
         clearScreen();
 
         System.out.println();
@@ -596,15 +604,15 @@ public class ProgramScreenHelper {
         System.out.println("╚════════════════════════════════════════╝\n");
 
         System.out.println("  Счет:");
-        System.out.printf("    %s: %d\n", data.getSessionOptions().firstPlayerName(), data.getSessionResult().getFirstPlayerWinsCount());
-        System.out.printf("    %s: %d\n", data.getSessionOptions().secondPlayerName(), data.getSessionResult().getSecondPlayerWinsCount());
-        System.out.printf("    Ничьих: %d\n", data.getSessionResult().getDrawsCount());
-        System.out.printf("    Раунд: %d/%d\n", data.getCurrentRound(), data.getSessionOptions().expectedCountOfWins() * 2 + 1);
+        System.out.printf("    %s: %d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
+        System.out.printf("    %s: %d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
+        System.out.printf("    Ничьих: %d\n", result.getDrawsCount());
+        System.out.printf("    Раунд: %d/%d\n", data.getCurrentRound(), options.expectedCountOfWins() * 2 + 1);
         System.out.println();
 
         drawField(board);
 
-        System.out.println("\n  Ходит: " + data.getCurrentPlayerName());
+        System.out.println("\n  Ходит: " + data.getCurrentPlayer().name() + "(" + data.getCurrentPlayer().symbol() + ")");
     }
 
     public static void showRoundResult(SessionOptions options, GameResultInfo roundResult, boolean waitForContinue) {
@@ -627,9 +635,10 @@ public class ProgramScreenHelper {
 
     private static String getRoundResultMessage(SessionOptions options, GameResultInfo roundResult) {
         return switch(roundResult.gameResult()) {
-            case FIRST_PLAYER_WON -> "Победил " + options.firstPlayerName() + "!";
-            case SECOND_PLAYER_WON -> "Победил " + options.secondPlayerName() + "!";
+            case FIRST_PLAYER_WON -> "Победил " + options.firstPlayer().name() + "!";
+            case SECOND_PLAYER_WON -> "Победил " + options.secondPlayer().name() + "!";
             case DRAW -> "Ничья!";
+            case TERMINATED -> "Игра прервана.";
         };
     }
 
@@ -663,10 +672,9 @@ public class ProgramScreenHelper {
         for (int i = 1; i <= size; i++) {
             System.out.print(" " + i + " |");
             for (int j = 1; j <= size; j++) {
-                System.out.print(" " + board.getSymbol(new Coordinates(i, j)) + " ");
-                if (j < size - 1) System.out.print("|");
+                System.out.print(" " + board.getSymbol(new Coordinates(i, j)) + " |");
             }
-            System.out.println("|");
+            System.out.println();
 
             // Разделительная линия между строками
             drawHorizontalLine(size);
