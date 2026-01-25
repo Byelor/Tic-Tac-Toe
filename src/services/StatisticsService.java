@@ -1,6 +1,6 @@
 package services;
 
-import models.SessionData;
+import models.TournamentData;
 import models.Statistics;
 
 import java.io.*;
@@ -27,9 +27,9 @@ public class StatisticsService {
         }
     }
 
-    public void saveSession(SessionData data) throws IOException {
+    public void saveTournament(TournamentData data) throws IOException {
         String filePath = STATS_DIR + File.separator + STATS_FILE;
-        String record = formatSessionRecord(data);
+        String record = formatTournamentRecord(data);
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
             writer.write(record);
@@ -45,47 +45,46 @@ public class StatisticsService {
             return new Statistics(Collections.emptyList(), 0);
         }
 
-        List<String> sessions = new ArrayList<>();
-        int totalRounds = 0;
+        List<String> tournaments = new ArrayList<>();
+        int totalGames = 0;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(statsFile))) {
-            StringBuilder sessionBuilder = new StringBuilder();
+            StringBuilder tournamentBuilder = new StringBuilder();
             String line;
 
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty() && !sessionBuilder.isEmpty()) {
-                    sessions.add(sessionBuilder.toString());
-                    sessionBuilder = new StringBuilder();
+                if (line.trim().isEmpty() && !tournamentBuilder.isEmpty()) {
+                    tournaments.add(tournamentBuilder.toString());
+                    tournamentBuilder = new StringBuilder();
                 } else {
-                    sessionBuilder.append(line).append("\n");
+                    tournamentBuilder.append(line).append("\n");
 
-                    if (line.startsWith("total_rounds=")) {
-                        totalRounds += Integer.parseInt(line.split("=")[1]);
+                    if (line.startsWith("total_games=")) {
+                        totalGames += Integer.parseInt(line.split("=")[1]);
                     }
                 }
             }
 
-            if (!sessionBuilder.isEmpty()) {
-                sessions.add(sessionBuilder.toString());
+            if (!tournamentBuilder.isEmpty()) {
+                tournaments.add(tournamentBuilder.toString());
             }
         }
 
-        return new Statistics(sessions, totalRounds);
+        return new Statistics(tournaments, totalGames);
     }
 
-    private String formatSessionRecord(SessionData data) {
-        return "session_date=" + DATE_FORMAT.format(new Date()) + "\n" +
-                "game_mode=" + data.getSessionOptions().gameMode() + "\n" +
-                "field_size=" + data.getSessionOptions().boardSize() + "\n" +
-                "player1_name=" + data.getSessionOptions().firstPlayer().name() + "\n" +
-                "player2_name=" + data.getSessionOptions().secondPlayer().name() + "\n" +
-                "player1_symbol=" + data.getSessionOptions().firstPlayer().symbol() + "\n" +
-                "player2_symbol=" + data.getSessionOptions().secondPlayer().symbol() + "\n" +
-                "wins_to_complete=" + data.getSessionOptions().expectedCountOfWins() + "\n" +
-                "total_rounds=" + data.getSessionResult().getTotalRounds() + "\n" +
-                "player1_wins=" + data.getSessionResult().getFirstPlayerWinsCount() + "\n" +
-                "player2_wins=" + data.getSessionResult().getSecondPlayerWinsCount() + "\n" +
-                "draws=" + data.getSessionResult().getDrawsCount() + "\n" +
+    private String formatTournamentRecord(TournamentData data) {
+        return "tournament_date=" + DATE_FORMAT.format(new Date()) + "\n" +
+                "field_size=" + data.getTournamentOptions().boardSize() + "\n" +
+                "player1_name=" + data.getTournamentOptions().firstPlayer().name() + "\n" +
+                "player2_name=" + data.getTournamentOptions().secondPlayer().name() + "\n" +
+                "player1_symbol=" + data.getTournamentOptions().firstPlayer().symbol() + "\n" +
+                "player2_symbol=" + data.getTournamentOptions().secondPlayer().symbol() + "\n" +
+                "wins_to_complete=" + data.getTournamentOptions().expectedCountOfWins() + "\n" +
+                "total_games=" + data.getTournamentResult().getTotalGamesNumber() + "\n" +
+                "player1_wins=" + data.getTournamentResult().getFirstPlayerWinsCount() + "\n" +
+                "player2_wins=" + data.getTournamentResult().getSecondPlayerWinsCount() + "\n" +
+                "draws=" + data.getTournamentResult().getDrawsCount() + "\n" +
                 "\n";
     }
 }
