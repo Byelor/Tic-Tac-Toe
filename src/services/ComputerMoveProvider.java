@@ -15,9 +15,7 @@ public class ComputerMoveProvider implements MoveProvider {
     public Optional<Coordinates> getMove(Board board) {
         List<Coordinates> availableMoves = board.getAvailableMoves();
 
-        return !availableMoves.isEmpty()
-                ? Optional.of(getRandomCoordinates(availableMoves))
-                : Optional.empty();
+        return Optional.of(getRandomCoordinates(availableMoves));
     }
 
     private Coordinates getRandomCoordinates(List<Coordinates> availableMoves) {

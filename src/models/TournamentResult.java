@@ -1,12 +1,12 @@
 package models;
 
-public class SessionResult {
+public class TournamentResult {
 
     private int firstPlayerWinsCount;
     private int secondPlayerWinsCount;
     private int drawsCount;
 
-    public void addRoundResult(GameResult result) {
+    public void addGameResult(GameResult result) {
         switch (result) {
             case FIRST_PLAYER_WON -> firstPlayerWinsCount++;
             case SECOND_PLAYER_WON -> secondPlayerWinsCount++;
@@ -14,7 +14,7 @@ public class SessionResult {
         }
     }
 
-    public int getTotalRounds() {
+    public int getTotalGamesNumber() {
         return firstPlayerWinsCount + secondPlayerWinsCount + drawsCount;
     }
 

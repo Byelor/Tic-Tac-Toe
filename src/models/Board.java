@@ -1,7 +1,5 @@
 package models;
 
-import exceptions.IllegalMovePositionException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +8,7 @@ public class Board {
     private final Symbol[][] field;
 
     public Board(int boardSize) {
-        field = new Symbol[boardSize][boardSize];
+        this.field = new Symbol[boardSize][boardSize];
         prepareBoard();
     }
 
@@ -19,7 +17,6 @@ public class Board {
     }
 
     public void setSymbol(Coordinates moveCoordinates, Symbol symbol) {
-        checkPositionCorrectness(moveCoordinates);
         int i = moveCoordinates.row() - 1;
         int j = moveCoordinates.column() - 1;
         field[i][j] = symbol;
@@ -44,6 +41,10 @@ public class Board {
             }
         }
         return true;
+    }
+
+    public boolean isMovePossible(Coordinates moveCoordinates) {
+        return !isPositionOutOfBoard(moveCoordinates) && !isPositionFilled(moveCoordinates);
     }
 
     public List<Coordinates> getAvailableMoves() {
@@ -124,13 +125,6 @@ public class Board {
                 return false;
             }
         return true;
-    }
-
-    private void checkPositionCorrectness(Coordinates moveCoordinates) {
-        if (isPositionOutOfBoard(moveCoordinates) || isPositionFilled(moveCoordinates)) {
-            throw new IllegalMovePositionException("Position with row %s and column %s is incorrect"
-                    .formatted(moveCoordinates.row(), moveCoordinates.column()));
-        }
     }
 
     private boolean isPositionOutOfBoard(Coordinates moveCoordinates) {

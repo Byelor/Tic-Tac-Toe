@@ -1,53 +1,93 @@
 package models;
 
+import ui.ProgramScreenHelper;
+
+import java.util.Optional;
+
 public class Game {
 
+    private final TournamentData tournamentData;
     private final Board board;
-    private Symbol currentSymbol;
-    private GameState gameState;
+    private final Player firstPlayer;
+    private final Player secondPlayer;
+    private Player currentPlayer;
+    private GameResult gameResult;
+    private int totalGameMoveCount;
 
-    public Game(int boardSize, boolean crossesStarts) {
-        board = new Board(boardSize);
-        currentSymbol = crossesStarts ? Symbol.CROSS : Symbol.ZERO;
-        gameState = GameState.PLAYING;
+    public Game(TournamentData tournamentData, int boardSize,
+                Player firstPlayer, Player secondPlayer, boolean isFirstPlayerMovesFirst) {
+        this.tournamentData = tournamentData;
+        this.board = new Board(boardSize);
+        this.firstPlayer = firstPlayer;
+        this.secondPlayer = secondPlayer;
+        this.currentPlayer = isFirstPlayerMovesFirst ? firstPlayer : secondPlayer;
+        this.gameResult = GameResult.NOT_YET_DEFINED;
+        this.totalGameMoveCount = 0;
+    }
+
+    public GameResult play() {
+        ProgramScreenHelper.showGameStartInfo(currentPlayer);
+
+        while(gameResult == GameResult.NOT_YET_DEFINED) {
+            ProgramScreenHelper.drawGameProcessInfo(tournamentData, currentPlayer, board);
+            Optional<Coordinates> moveCoordinates = currentPlayer.provider().getMove(board);
+            if(moveCoordinates.isEmpty()) {
+                gameResult = GameResult.TERMINATED;
+                break;
+            } else if (!board.isMovePossible(moveCoordinates.get())) {
+                ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
+            } else {
+                makeMove(moveCoordinates.get());
+            }
+        }
+
+        showGameResult();
+
+        return gameResult;
     }
 
     public void makeMove(Coordinates moveCoordinates) {
-        board.setSymbol(moveCoordinates, currentSymbol);
+        board.setSymbol(moveCoordinates, currentPlayer.symbol());
         updateGameStateIfNeeded();
-        switchCurrentSymbol();
-    }
-
-    public Board getBoard() {
-        return board;
-    }
-
-    public GameState getGameState() {
-        return gameState;
-    }
-
-    private void switchCurrentSymbol() {
-        if (currentSymbol == Symbol.CROSS) {
-            currentSymbol = Symbol.ZERO;
-        }
-        else {
-            currentSymbol = Symbol.CROSS;
-        }
+        switchCurrentPlayer();
+        totalGameMoveCount++;
     }
 
     private void updateGameStateIfNeeded() {
         if (board.existsWinningLine()) {
-            setWinner(currentSymbol);
+            setWinResult();
         } else if (board.isFieldFilled()) {
-            gameState = GameState.DRAW;
+            gameResult = GameResult.DRAW;
         }
     }
 
-    private void setWinner(Symbol figureWinner) {
-        if (figureWinner == Symbol.CROSS) {
-            gameState = GameState.CROSSES_WON;
+    private void switchCurrentPlayer() {
+        if (currentPlayer == firstPlayer) {
+            currentPlayer = secondPlayer;
+        }
+        else {
+            currentPlayer = firstPlayer;
+        }
+    }
+
+    private void setWinResult() {
+        if (currentPlayer == firstPlayer) {
+            gameResult = GameResult.FIRST_PLAYER_WON;
         } else {
-            gameState = GameState.ZEROES_WON;
+            gameResult = GameResult.SECOND_PLAYER_WON;
+        }
+    }
+
+    private void showGameResult() {
+        if(gameResult == GameResult.TERMINATED) {
+            ProgramScreenHelper.showGameResultTerminated();
+        } else if (gameResult == GameResult.DRAW) {
+            ProgramScreenHelper.showGameResultDraw();
+        } else {
+            String winnerName = gameResult == GameResult.FIRST_PLAYER_WON
+                    ? firstPlayer.name()
+                    : secondPlayer.name();
+            ProgramScreenHelper.showGameResultWinner(winnerName, totalGameMoveCount);
         }
     }
 }
