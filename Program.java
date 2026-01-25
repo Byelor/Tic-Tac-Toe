@@ -1,4 +1,4 @@
-import services.SessionManager;
+import services.TournamentManager;
 import models.*;
 import services.StatisticsService;
 import ui.ProgramScreenHelper;
@@ -35,19 +35,19 @@ public class Program {
     }
 
     private void handleNewGame() {
-        SessionOptions options = ProgramScreenHelper.configureGameSession();
+        TournamentOptions options = ProgramScreenHelper.configureTournament();
 
         if (options == null) {
             return; //пользователь отменил
         }
 
-        SessionManager sessionManager = new SessionManager(options);
-        SessionData data = sessionManager.start();
+        TournamentManager tournamentManager = new TournamentManager(options);
+        TournamentData data = tournamentManager.startTournament();
 
-        if (data != null && data.getSessionResult().getTotalRounds() > 0) {
-            ProgramScreenHelper.showSessionSummary(data);
+        if (data != null && data.getTournamentResult().getTotalGamesNumber() > 0) {
+            ProgramScreenHelper.showTournamentResult(data);
             try {
-                statsService.saveSession(data);
+                statsService.saveTournament(data);
             }
             catch (Exception e) {
                 ProgramScreenHelper.showError("Произошла ошибка: " + e.getMessage());
