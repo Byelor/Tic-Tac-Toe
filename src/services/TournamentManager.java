@@ -1,6 +1,7 @@
 package services;
 
 import models.*;
+import ui.ProgramScreenHelper;
 
 public class TournamentManager {
 
@@ -11,30 +12,18 @@ public class TournamentManager {
     }
 
     /**
-     * starts a tournament until expectedCountOfWins wins or until exit
+     * Starts tournament of N amount of games until expectedCountOfWins wins or until exit.
+     * 
      * @return tournament data that contains tournament options and result(number of games, wins and draws)
      */
     public TournamentData startTournament() {
         while (shouldContinueTournament()) {
-            Game game = configureGame();
-            GameResult gameResult = game.play();
+            ProgramScreenHelper.showTournamentState(tournamentData);
+            GameResult gameResult = playNewGame();
             if(shouldStopTournament(gameResult)) break;
             updateTournamentData(gameResult);
         }
         return tournamentData;
-    }
-
-    private void updateTournamentData(GameResult gameResult) {
-        tournamentData.getTournamentResult().addGameResult(gameResult);
-        tournamentData.nextGame();
-    }
-
-    private Game configureGame() {
-        int boardSize = tournamentData.getTournamentOptions().boardSize();
-        Player firstPlayer = tournamentData.getTournamentOptions().firstPlayer();
-        Player secondPlayer = tournamentData.getTournamentOptions().secondPlayer();
-        boolean isFirstPlayerMovesFirst = isFirstPlayerMovesFirst();
-        return new Game(tournamentData, boardSize, firstPlayer, secondPlayer, isFirstPlayerMovesFirst);
     }
 
     private boolean shouldContinueTournament() {
@@ -56,17 +45,30 @@ public class TournamentManager {
                 && currentTournamentResult.getSecondPlayerWinsCount() < expectedCountOfWins;
     }
 
-    private boolean shouldStopTournament(GameResult gameResult) {
-        return gameResult == GameResult.TERMINATED;
+    private GameResult playNewGame() {
+        Game game = createNewGame();
+        return game.play();
+    }
+
+    private Game createNewGame() {
+        int boardSize = tournamentData.getTournamentOptions().boardSize();
+        Player firstPlayer = tournamentData.getTournamentOptions().firstPlayer();
+        Player secondPlayer = tournamentData.getTournamentOptions().secondPlayer();
+        boolean isFirstPlayerMovesFirst = isFirstPlayerMovesFirst();
+        return new Game(boardSize, firstPlayer, secondPlayer, isFirstPlayerMovesFirst);
     }
 
     private boolean isFirstPlayerMovesFirst() {
         boolean isOrderOfMovesSwaps = tournamentData.getTournamentOptions().isOrderOfMovesSwaps();
-        if(isOrderOfMovesSwaps) {
-            return tournamentData.getCurrentGameNumber() % 2 != 0;
-        }
-        else {
-            return true;
-        }
+        return !isOrderOfMovesSwaps || tournamentData.getCurrentGameNumber() % 2 != 0;
+    }
+
+    private boolean shouldStopTournament(GameResult gameResult) {
+        return gameResult == GameResult.TERMINATED;
+    }
+
+    private void updateTournamentData(GameResult gameResult) {
+        tournamentData.getTournamentResult().addGameResult(gameResult);
+        tournamentData.nextGame();
     }
 }

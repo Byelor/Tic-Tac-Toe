@@ -333,6 +333,22 @@ public class ProgramScreenHelper {
         }
     }
 
+    public static void showTournamentState(TournamentData tournamentData) {
+        clearScreen();
+        TournamentOptions options = tournamentData.getTournamentOptions();
+        TournamentResult result = tournamentData.getTournamentResult();
+
+        System.out.println("  Счет:");
+        System.out.printf("    %s: %d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
+        System.out.printf("    %s: %d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
+        System.out.printf("    Ничьих: %d\n", result.getDrawsCount());
+        System.out.printf("    Игра: %d/%d\n", tournamentData.getCurrentGameNumber(), options.expectedCountOfWins() * 2 + 1);
+
+        System.out.println();
+        System.out.print("  Нажмите Enter...");
+        scanner.nextLine();
+    }
+
     public static void showTournamentResult(TournamentData data){
         TournamentOptions options = data.getTournamentOptions();
         TournamentResult result = data.getTournamentResult();
@@ -559,21 +575,7 @@ public class ProgramScreenHelper {
         scanner.nextLine();
     }
 
-    public static void showGameStartInfo(Player firstMovePlayer) {
-        clearScreen();
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║          НАЧАЛО ИГРЫ                   ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-        System.out.println("  Первым ходит: " + firstMovePlayer.name() + " (" + firstMovePlayer.symbol() + ")");
-        System.out.println();
-        System.out.print("  Нажмите Enter для начала...");
-        scanner.nextLine();
-    }
-
-    public static void drawGameProcessInfo(TournamentData data, Player currentPlayer, Board board) {
-        TournamentOptions options = data.getTournamentOptions();
-        TournamentResult result = data.getTournamentResult();
+    public static void drawGameProcessInfo(Player currentPlayer, Board board) {
         clearScreen();
 
         System.out.println();
@@ -581,25 +583,11 @@ public class ProgramScreenHelper {
         System.out.println("║              ИГРА В ПРОЦЕССЕ           ║");
         System.out.println("╚════════════════════════════════════════╝\n");
 
-        System.out.println("  Счет:");
-        System.out.printf("    %s: %d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
-        System.out.printf("    %s: %d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
-        System.out.printf("    Ничьих: %d\n", result.getDrawsCount());
-        System.out.printf("    Игра: %d/%d\n", data.getCurrentGameNumber(), options.expectedCountOfWins() * 2 + 1);
         System.out.println();
 
         drawField(board);
 
         System.out.println("\n  Ходит: " + currentPlayer.name() + "(" + currentPlayer.symbol() + ")");
-    }
-
-    public static void showGameResultTerminated() {
-        clearScreen();
-        printGameResultHeader();
-
-        System.out.println(" Игра прервана. Возврат в главное меню. \n");
-        System.out.print("  Нажмите Enter для продолжения...");
-        scanner.nextLine();
     }
 
     public static void showGameResultDraw() {

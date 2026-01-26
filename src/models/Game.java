@@ -6,7 +6,6 @@ import java.util.Optional;
 
 public class Game {
 
-    private final TournamentData tournamentData;
     private final Board board;
     private final Player firstPlayer;
     private final Player secondPlayer;
@@ -14,9 +13,7 @@ public class Game {
     private GameResult gameResult;
     private int totalGameMoveCount;
 
-    public Game(TournamentData tournamentData, int boardSize,
-                Player firstPlayer, Player secondPlayer, boolean isFirstPlayerMovesFirst) {
-        this.tournamentData = tournamentData;
+    public Game(int boardSize, Player firstPlayer, Player secondPlayer, boolean isFirstPlayerMovesFirst) {
         this.board = new Board(boardSize);
         this.firstPlayer = firstPlayer;
         this.secondPlayer = secondPlayer;
@@ -26,30 +23,26 @@ public class Game {
     }
 
     public GameResult play() {
-        ProgramScreenHelper.showGameStartInfo(currentPlayer);
+        while (gameResult == GameResult.NOT_YET_DEFINED) {
+            ProgramScreenHelper.drawGameProcessInfo(currentPlayer, board);
 
-        while(gameResult == GameResult.NOT_YET_DEFINED) {
-            ProgramScreenHelper.drawGameProcessInfo(tournamentData, currentPlayer, board);
             Optional<Coordinates> moveCoordinates = currentPlayer.provider().getMove(board);
-            if(moveCoordinates.isEmpty()) {
-                gameResult = GameResult.TERMINATED;
-                break;
-            } else if (!board.isMovePossible(moveCoordinates.get())) {
-                ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
-            } else {
+            if (moveCoordinates.isEmpty()) return GameResult.TERMINATED;
+
+            if (board.isMovePossible(moveCoordinates.get())){
                 makeMove(moveCoordinates.get());
+                updateGameStateIfNeeded();
+                switchCurrentPlayerIfNeeded();
+            } else {
+                ProgramScreenHelper.showMessage("Недопустимый ход! Попробуйте снова.");
             }
         }
-
         showGameResult();
-
         return gameResult;
     }
 
     public void makeMove(Coordinates moveCoordinates) {
         board.setSymbol(moveCoordinates, currentPlayer.symbol());
-        updateGameStateIfNeeded();
-        switchCurrentPlayer();
         totalGameMoveCount++;
     }
 
@@ -61,27 +54,17 @@ public class Game {
         }
     }
 
-    private void switchCurrentPlayer() {
-        if (currentPlayer == firstPlayer) {
-            currentPlayer = secondPlayer;
-        }
-        else {
-            currentPlayer = firstPlayer;
-        }
+    private void setWinResult() {
+        gameResult = currentPlayer == firstPlayer ? GameResult.FIRST_PLAYER_WON : GameResult.SECOND_PLAYER_WON;
     }
 
-    private void setWinResult() {
-        if (currentPlayer == firstPlayer) {
-            gameResult = GameResult.FIRST_PLAYER_WON;
-        } else {
-            gameResult = GameResult.SECOND_PLAYER_WON;
-        }
+    private void switchCurrentPlayerIfNeeded() {
+        if (gameResult != GameResult.NOT_YET_DEFINED) return;
+        currentPlayer = currentPlayer == firstPlayer ? secondPlayer : firstPlayer;
     }
 
     private void showGameResult() {
-        if(gameResult == GameResult.TERMINATED) {
-            ProgramScreenHelper.showGameResultTerminated();
-        } else if (gameResult == GameResult.DRAW) {
+        if (gameResult == GameResult.DRAW) {
             ProgramScreenHelper.showGameResultDraw();
         } else {
             String winnerName = gameResult == GameResult.FIRST_PLAYER_WON
