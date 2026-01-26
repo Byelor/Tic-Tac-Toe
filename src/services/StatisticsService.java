@@ -84,7 +84,6 @@ public class StatisticsService {
                 "total_games=" + data.getTournamentResult().getTotalGamesNumber() + "\n" +
                 "player1_wins=" + data.getTournamentResult().getFirstPlayerWinsCount() + "\n" +
                 "player2_wins=" + data.getTournamentResult().getSecondPlayerWinsCount() + "\n" +
-                "draws=" + data.getTournamentResult().getDrawsCount() + "\n" +
-                "\n";
+                "draws=" + data.getTournamentResult().getDrawsCount();
     }
 }
