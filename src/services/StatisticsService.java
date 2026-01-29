@@ -1,89 +1,73 @@
 package services;
 
-import models.TournamentData;
-import models.Statistics;
+import models.*;
 
 import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.nio.file.*;
+import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import static java.nio.file.StandardOpenOption.*;
 
 public class StatisticsService {
 
-    private static final String STATS_FILE = "tictactoe_stats.txt";
-    private static final String STATS_DIR = "data";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final String STATISTICS_FILE_NAME = "tictactoe_stats.txt";
+    private static final String STATISTICS_DIRECTORY = "data";
+    private static final DateTimeFormatter TOURNAMENT_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public StatisticsService() {
-        ensureStatsDirectory();
-    }
+    private final Path statisticsFilePath;
 
-    private void ensureStatsDirectory() {
-        File dir = new File(STATS_DIR);
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
+    public StatisticsService() throws IOException {
+        this.statisticsFilePath = Paths.get(STATISTICS_DIRECTORY, STATISTICS_FILE_NAME);
+        Files.createDirectories(statisticsFilePath.getParent());
     }
 
     public void saveTournament(TournamentData data) throws IOException {
-        String filePath = STATS_DIR + File.separator + STATS_FILE;
-        String record = formatTournamentRecord(data);
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
-            writer.write(record);
-            writer.newLine();
-        }
+        String content = prepareTournamentDataFileContent(data);
+        Files.writeString(statisticsFilePath, content.concat(System.lineSeparator()), CREATE, APPEND);
     }
 
     public Statistics getStatistics() throws IOException {
-        String filePath = STATS_DIR + File.separator + STATS_FILE;
-        File statsFile = new File(filePath);
-
-        if (!statsFile.exists()) {
-            return new Statistics(Collections.emptyList(), 0);
-        }
-
-        List<String> tournaments = new ArrayList<>();
-        int totalGames = 0;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(statsFile))) {
-            StringBuilder tournamentBuilder = new StringBuilder();
-            String line;
-
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty() && !tournamentBuilder.isEmpty()) {
-                    tournaments.add(tournamentBuilder.toString());
-                    tournamentBuilder = new StringBuilder();
-                } else {
-                    tournamentBuilder.append(line).append("\n");
-
-                    if (line.startsWith("total_games=")) {
-                        totalGames += Integer.parseInt(line.split("=")[1]);
-                    }
-                }
-            }
-
-            if (!tournamentBuilder.isEmpty()) {
-                tournaments.add(tournamentBuilder.toString());
-            }
-        }
-
-        return new Statistics(tournaments, totalGames);
+        return Files.exists(statisticsFilePath)
+                ? loadStatistics()
+                : new Statistics(Collections.emptyList(), 0);
     }
 
-    private String formatTournamentRecord(TournamentData data) {
-        return "tournament_date=" + DATE_FORMAT.format(new Date()) + "\n" +
+    private Statistics loadStatistics() throws IOException {
+        List<String> tournaments = new ArrayList<>();
+
+        List<String> totalContent = Files.readAllLines(statisticsFilePath);
+        StringBuilder sb = new StringBuilder();
+        for(String line : totalContent) {
+            if(!line.isEmpty()) {
+                sb.append(line).append("\n");
+            } else {
+                tournaments.add(sb.toString());
+                sb = new StringBuilder();
+            }
+        }
+
+        int totalGameNumber = totalContent.stream()
+                .filter(s -> s.startsWith("games_number="))
+                .map(s -> s.split("=")[1])
+                .mapToInt(Integer::parseInt)
+                .sum();
+
+        return new Statistics(tournaments, totalGameNumber);
+    }
+
+    private String prepareTournamentDataFileContent(TournamentData data) {
+        return "tournament_date=" + TOURNAMENT_DATE_FORMAT.format(LocalDateTime.now()) + "\n" +
                 "field_size=" + data.getTournamentOptions().boardSize() + "\n" +
                 "player1_name=" + data.getTournamentOptions().firstPlayer().name() + "\n" +
                 "player2_name=" + data.getTournamentOptions().secondPlayer().name() + "\n" +
                 "player1_symbol=" + data.getTournamentOptions().firstPlayer().symbol() + "\n" +
                 "player2_symbol=" + data.getTournamentOptions().secondPlayer().symbol() + "\n" +
                 "wins_to_complete=" + data.getTournamentOptions().expectedCountOfWins() + "\n" +
-                "total_games=" + data.getTournamentResult().getTotalGamesNumber() + "\n" +
+                "games_number=" + data.getTournamentResult().getTotalGamesNumber() + "\n" +
                 "player1_wins=" + data.getTournamentResult().getFirstPlayerWinsCount() + "\n" +
                 "player2_wins=" + data.getTournamentResult().getSecondPlayerWinsCount() + "\n" +
-                "draws=" + data.getTournamentResult().getDrawsCount();
+                "draws=" + data.getTournamentResult().getDrawsCount() + "\n";
     }
 }

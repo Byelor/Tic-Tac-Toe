@@ -483,7 +483,7 @@ public class ProgramScreenHelper {
                                 System.out.println("  Формат: Турнир до " + wins + " побед");
                             }
                             break;
-                        case "total_games":
+                        case "games_number":
                             System.out.println("  Всего игр: " + value);
                             break;
                         case "player1_wins":
@@ -495,7 +495,7 @@ public class ProgramScreenHelper {
                         case "draws":
                             System.out.println("  Ничьих: " + value);
 
-                            String gamesLine = findLine(lines, "total_games");
+                            String gamesLine = findLine(lines, "games_number");
                             if (gamesLine != null) {
                                 String[] gamesParts = gamesLine.split("=", 2);
                                 int totalGames = Integer.parseInt(gamesParts[1].trim());
