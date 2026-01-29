@@ -1,14 +1,20 @@
 package services;
 
-import models.*;
+import models.Statistics;
+import models.TournamentData;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.APPEND;
 
 public class StatisticsService {
 
@@ -35,26 +41,28 @@ public class StatisticsService {
     }
 
     private Statistics loadStatistics() throws IOException {
-        List<String> tournaments = new ArrayList<>();
+        List<String> tournamentsData = new ArrayList<>();
 
-        List<String> totalContent = Files.readAllLines(statisticsFilePath);
+        List<String> statisticsFileContent = Files.readAllLines(statisticsFilePath);
         StringBuilder sb = new StringBuilder();
-        for(String line : totalContent) {
+        for(String line : statisticsFileContent) {
             if(!line.isEmpty()) {
-                sb.append(line).append("\n");
+                sb.append(line).append(System.lineSeparator());
             } else {
-                tournaments.add(sb.toString());
+                tournamentsData.add(sb.toString());
                 sb = new StringBuilder();
             }
         }
 
-        int totalGameNumber = totalContent.stream()
+        return new Statistics(tournamentsData, getTotalGameCount(statisticsFileContent));
+    }
+
+    private static int getTotalGameCount(List<String> totalContent) {
+        return totalContent.stream()
                 .filter(s -> s.startsWith("games_number="))
                 .map(s -> s.split("=")[1])
                 .mapToInt(Integer::parseInt)
                 .sum();
-
-        return new Statistics(tournaments, totalGameNumber);
     }
 
     private String prepareTournamentDataFileContent(TournamentData data) {
