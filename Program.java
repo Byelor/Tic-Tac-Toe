@@ -3,12 +3,18 @@ import models.*;
 import services.StatisticsService;
 import ui.ProgramScreenHelper;
 
+import java.io.IOException;
+
 public class Program {
     private final StatisticsService statsService;
     private boolean isRunning;
 
     public Program() {
-        this.statsService = new StatisticsService();
+        try {
+            this.statsService = new StatisticsService();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         this.isRunning = true;
     }
 
