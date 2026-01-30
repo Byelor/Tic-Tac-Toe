@@ -16,7 +16,7 @@ import java.util.List;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.APPEND;
 
-public class StatisticsService {
+public class TournamentStatisticsService {
 
     private static final String STATISTICS_FILE_NAME = "tictactoe_stats.txt";
     private static final String STATISTICS_DIRECTORY = "data";
@@ -24,12 +24,12 @@ public class StatisticsService {
 
     private final Path statisticsFilePath;
 
-    public StatisticsService() throws IOException {
+    public TournamentStatisticsService() {
         this.statisticsFilePath = Paths.get(STATISTICS_DIRECTORY, STATISTICS_FILE_NAME);
-        Files.createDirectories(statisticsFilePath.getParent());
     }
 
     public void saveTournament(TournamentData data) throws IOException {
+        Files.createDirectories(statisticsFilePath.getParent());
         String content = prepareTournamentDataFileContent(data);
         Files.writeString(statisticsFilePath, content.concat(System.lineSeparator()), CREATE, APPEND);
     }
