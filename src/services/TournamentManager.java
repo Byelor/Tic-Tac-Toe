@@ -7,8 +7,6 @@ import models.TournamentData;
 import models.TournamentOptions;
 import models.TournamentResult;
 
-import ui.ProgramScreenHelper;
-
 public class TournamentManager {
 
     private final TournamentData tournamentData;

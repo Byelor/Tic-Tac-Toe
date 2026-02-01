@@ -1,6 +1,6 @@
 package models;
 
-import ui.ProgramScreenHelper;
+import services.ProgramScreenHelper;
 
 import java.util.Optional;
 

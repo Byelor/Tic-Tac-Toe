@@ -4,7 +4,7 @@ import models.TournamentOptions;
 import models.Statistics;
 import services.TournamentManager;
 import services.TournamentStatisticsService;
-import ui.ProgramScreenHelper;
+import services.ProgramScreenHelper;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -26,7 +26,7 @@ public class ProgramService {
             switch (choice) {
                 case NEW_TOURNAMENT -> handleNewTournament();
                 case SHOW_RULES -> ProgramScreenHelper.showRules();
-                case SHOW_STATS -> handleShowStatistics();
+                case SHOW_STATISTICS -> handleShowStatistics();
                 case EXIT -> {
                     ProgramScreenHelper.showGoodbyeMessage();
                     return;
@@ -41,10 +41,9 @@ public class ProgramService {
     }
 
     private void tryToPlayTournament(TournamentOptions options) {
-        TournamentManager tournamentManager = new TournamentManager(options);
-        TournamentData data = tournamentManager.startTournament();
-
         try {
+            TournamentManager tournamentManager = new TournamentManager(options);
+            TournamentData data = tournamentManager.startTournament();
             saveTournamentStatisticsIfNeeded(data);
         } catch (Exception e) {
             ProgramScreenHelper.showError("Произошла ошибка: " + e.getMessage());

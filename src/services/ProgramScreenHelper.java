@@ -1,4 +1,4 @@
-package ui;
+package services;
 
 import models.Board;
 import models.Coordinates;
@@ -10,9 +10,6 @@ import models.Symbol;
 import models.TournamentData;
 import models.TournamentOptions;
 import models.TournamentResult;
-
-import services.ComputerMoveProvider;
-import services.PlayerMoveProvider;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +41,7 @@ public class ProgramScreenHelper {
                 case "2":
                     return MainMenuChoice.SHOW_RULES;
                 case "3":
-                    return MainMenuChoice.SHOW_STATS;
+                    return MainMenuChoice.SHOW_STATISTICS;
                 case "4":
                     return MainMenuChoice.EXIT;
                 default:

@@ -4,6 +4,6 @@ public enum MainMenuChoice {
 
     NEW_TOURNAMENT,
     SHOW_RULES,
-    SHOW_STATS,
+    SHOW_STATISTICS,
     EXIT
 }
