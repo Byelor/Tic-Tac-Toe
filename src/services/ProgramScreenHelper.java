@@ -33,7 +33,7 @@ public class ProgramScreenHelper {
         clearScreen();
         drawMainMenu();
 
-        while(true) {
+        while (true) {
             String choice = scanner.nextLine().trim().toLowerCase();
             switch (choice) {
                 case "1":
@@ -50,45 +50,7 @@ public class ProgramScreenHelper {
         }
     }
 
-    private static void drawMainMenu() {
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║         КРЕСТИКИ-НОЛИКИ  v1.0          ║");
-        System.out.println("╠════════════════════════════════════════╣");
-        System.out.println("║  1. Новый турнир                       ║");
-        System.out.println("║  2. Правила игры                       ║");
-        System.out.println("║  3. Статистика                         ║");
-        System.out.println("║  4. Выход                              ║");
-        System.out.println("╚════════════════════════════════════════╝");
-        System.out.print("\n  Выберите действие (1-4): ");
-    }
-
-    public static void showRules() {
-        clearScreen();
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║           ПРАВИЛА ИГРЫ                 ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-        System.out.println("  Цель игры:");
-        System.out.println("  • Выстроить в ряд N своих символов");
-        System.out.println("    (крестиков или ноликов), где N - размер поля");
-        System.out.println();
-        System.out.println("  Как играть:");
-        System.out.println("  1. Игроки по очереди ставят свои символы");
-        System.out.println("  2. Символы ставятся в свободные ячейки");
-        System.out.println("  3. Побеждает тот, кто первым соберет");
-        System.out.println("     линию из N своих символов");
-        System.out.println();
-        System.out.println("  Возможные линии:");
-        System.out.println("  • Горизонтальные");
-        System.out.println("  • Вертикальные");
-        System.out.println("  • Диагональные (обе)");
-        System.out.println();
-        System.out.print("  Нажмите Enter для возврата в меню...");
-        scanner.nextLine();
-    }
-
-    public static Optional<TournamentOptions> configureTournament(){
+    public static Optional<TournamentOptions> configureTournament() {
         GameMode currentGameMode = TournamentOptions.DEFAULT_GAME_MODE;
         String currentFirstPlayerName = TournamentOptions.DEFAULT_FIRST_PLAYER_NAME;
         String currentSecondPlayerName = TournamentOptions.DEFAULT_SECOND_PLAYER_NAME;
@@ -181,6 +143,250 @@ public class ProgramScreenHelper {
                 currentShouldSwitchPlayerTurn,
                 currentExpectedCountOfWins
         ));
+    }
+
+    public static void showTournamentState(TournamentData tournamentData) {
+        clearScreen();
+        TournamentOptions options = tournamentData.getTournamentOptions();
+        TournamentResult result = tournamentData.getTournamentResult();
+
+        System.out.println("  Счет:");
+        System.out.printf("    %s: %d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
+        System.out.printf("    %s: %d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
+        System.out.printf("    Ничьих: %d\n", result.getDrawsCount());
+        System.out.printf("    Игра: %d/%d\n", tournamentData.getCurrentGameNumber(), options.expectedCountOfWins() * 2 + 1);
+
+        System.out.println();
+        System.out.print("  Нажмите Enter...");
+        scanner.nextLine();
+    }
+
+    public static void drawCurrentGameState(Player currentPlayer, Board board) {
+        clearScreen();
+
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║              ИГРА В ПРОЦЕССЕ           ║");
+        System.out.println("╚════════════════════════════════════════╝\n");
+
+        System.out.println();
+
+        drawField(board);
+
+        System.out.println("\n  Ходит: " + currentPlayer.name() + "(" + currentPlayer.symbol() + ")");
+    }
+
+    public static Optional<Coordinates> getMove(Board board) {
+        while (true) {
+            System.out.print("\n Введите положение символа (строка столбец или 'выход'): ");
+            String input = scanner.nextLine().trim();
+
+            if (input.equalsIgnoreCase("выход") || input.equalsIgnoreCase("exit")) {
+                System.out.print("Выйти из игры? (да/нет): ");
+                if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
+                    return Optional.empty();
+                }
+                continue;
+            }
+
+            try {
+                String[] parts = input.split("\\s+");
+                if (parts.length != 2) {
+                    System.out.println("Введите два числа через пробел");
+                    continue;
+                }
+
+                Coordinates moveCoordinates = new Coordinates(
+                        Integer.parseInt(parts[0]),
+                        Integer.parseInt(parts[1])
+                );
+
+                if (moveCoordinates.row() < 1 || moveCoordinates.row() > board.getSize() ||
+                        moveCoordinates.column() < 1 || moveCoordinates.column() > board.getSize()) {
+                    System.out.println("Координаты от 1 до " + board.getSize());
+                    continue;
+                }
+
+                return Optional.of(moveCoordinates);
+
+            } catch (NumberFormatException e) {
+                System.out.println("Введите числа");
+            }
+        }
+    }
+
+    public static void showGameResultDraw() {
+        clearScreen();
+        printGameResultHeader();
+
+        System.out.println(" Ничья! \n");
+        System.out.print("  Нажмите Enter для продолжения...");
+        scanner.nextLine();
+    }
+
+    public static void showGameResultWinner(String winnerName, int totalGameMoveCount) {
+        clearScreen();
+        printGameResultHeader();
+
+        System.out.println(" Победил " + winnerName + "!");
+        System.out.println(" Количество ходов: " + totalGameMoveCount + "\n");
+        System.out.print("  Нажмите Enter для продолжения...");
+        scanner.nextLine();
+    }
+
+    public static void showTournamentResult(TournamentData data) {
+        TournamentOptions options = data.getTournamentOptions();
+        TournamentResult result = data.getTournamentResult();
+        clearScreen();
+
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║         ИТОГИ ТУРНИРА                  ║");
+        System.out.println("╚════════════════════════════════════════╝\n");
+
+        System.out.println("  Результаты:");
+        System.out.printf("    Всего игр: %-20d\n", result.getTotalGamesCount());
+        System.out.printf("    Побед %s: %-23d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
+        System.out.printf("    Побед %s: %-23d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
+        System.out.printf("    Ничьих: %-28d\n", result.getDrawsCount());
+        System.out.println();
+
+        // Расчет процентов
+        if (result.getTotalGamesCount() > 0) {
+            double p1Percent = (double) result.getFirstPlayerWinsCount() / result.getTotalGamesCount() * 100;
+            double p2Percent = (double) result.getSecondPlayerWinsCount() / result.getTotalGamesCount() * 100;
+            double drawPercent = (double) result.getDrawsCount() / result.getTotalGamesCount() * 100;
+
+            System.out.println("  Процентные соотношения:");
+            System.out.printf("    %s: %.1f%%\n", options.firstPlayer().name(), p1Percent);
+            System.out.printf("    %s: %.1f%%\n", options.secondPlayer().name(), p2Percent);
+            System.out.printf("    Ничьи: %.1f%%\n", drawPercent);
+            System.out.println();
+        }
+
+        String tournamentWinner = getTournamentWinner(data);
+
+        System.out.println("  Результат турнира: " + tournamentWinner);
+        System.out.println();
+        System.out.println("═".repeat(44));
+        System.out.println();
+        System.out.print("  Нажмите Enter для возврата в меню...");
+        scanner.nextLine();
+    }
+
+    public static void showRules() {
+        clearScreen();
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║           ПРАВИЛА ИГРЫ                 ║");
+        System.out.println("╚════════════════════════════════════════╝\n");
+        System.out.println("  Цель игры:");
+        System.out.println("  • Выстроить в ряд N своих символов");
+        System.out.println("    (крестиков или ноликов), где N - размер поля");
+        System.out.println();
+        System.out.println("  Как играть:");
+        System.out.println("  1. Игроки по очереди ставят свои символы");
+        System.out.println("  2. Символы ставятся в свободные ячейки");
+        System.out.println("  3. Побеждает тот, кто первым соберет");
+        System.out.println("     линию из N своих символов");
+        System.out.println();
+        System.out.println("  Возможные линии:");
+        System.out.println("  • Горизонтальные");
+        System.out.println("  • Вертикальные");
+        System.out.println("  • Диагональные (обе)");
+        System.out.println();
+        System.out.print("  Нажмите Enter для возврата в меню...");
+        scanner.nextLine();
+    }
+
+    public static void showStatistics(Statistics stat) {
+        clearScreen();
+
+        if (stat.totalGameCount() == 0) {
+            System.out.println("  Статистика пуста. Сыграйте несколько игр!");
+            System.out.println();
+            System.out.print("  Нажмите Enter для возврата в меню...");
+            scanner.nextLine();
+            return;
+        }
+
+        System.out.println("  Общая статистика:");
+        System.out.println();
+        System.out.printf("    Всего игр: %-20d\n", stat.totalGameCount());
+        System.out.printf("    Всего турниров: %-21d\n", stat.tournamentsData().size());
+        System.out.println();
+
+        if (!stat.tournamentsData().isEmpty()) {
+            showTournamentHistory(stat.tournamentsData());
+        }
+    }
+
+    public static void showError(String message) {
+        clearScreen();
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║              ОШИБКА!                   ║");
+        System.out.println("╚════════════════════════════════════════╝\n");
+        System.out.println("  " + message);
+        System.out.println();
+        System.out.print("  Нажмите Enter для продолжения...");
+        scanner.nextLine();
+    }
+
+    public static void showMessage(String message) {
+        clearScreen();
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║               СООБЩЕНИЕ                ║");
+        System.out.println("╚════════════════════════════════════════╝\n");
+        System.out.println("  " + message);
+        System.out.println();
+        System.out.print("  Нажмите Enter для продолжения...");
+        scanner.nextLine();
+    }
+
+    public static void showGoodbyeMessage() {
+        clearScreen();
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║             ДО СВИДАНИЯ!               ║");
+        System.out.println("║                                        ║");
+        System.out.println("║            Спасибо за игру!            ║");
+        System.out.println("║            Ждем вас снова!             ║");
+        System.out.println("╚════════════════════════════════════════╝");
+        System.out.println();
+        System.out.print("  Нажмите Enter для выхода...");
+        scanner.nextLine();
+    }
+
+    //==========================================================================================//
+
+    private static void clearScreen() {
+        try {
+            if (System.getProperty("os.name").contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                System.out.print("\033[H\033[2J");
+                System.out.flush();
+            }
+        } catch (Exception e) {
+            for (int i = 0; i < 50; i++) {
+                System.out.println();
+            }
+        }
+    }
+
+    private static void drawMainMenu() {
+        System.out.println();
+        System.out.println("╔════════════════════════════════════════╗");
+        System.out.println("║         КРЕСТИКИ-НОЛИКИ  v1.0          ║");
+        System.out.println("╠════════════════════════════════════════╣");
+        System.out.println("║  1. Новый турнир                       ║");
+        System.out.println("║  2. Правила игры                       ║");
+        System.out.println("║  3. Статистика                         ║");
+        System.out.println("║  4. Выход                              ║");
+        System.out.println("╚════════════════════════════════════════╝");
+        System.out.print("\n  Выберите действие (1-4): ");
     }
 
     private static String getGameFormatText(int winsToComplete) {
@@ -339,60 +545,46 @@ public class ProgramScreenHelper {
         }
     }
 
-    public static void showTournamentState(TournamentData tournamentData) {
-        clearScreen();
-        TournamentOptions options = tournamentData.getTournamentOptions();
-        TournamentResult result = tournamentData.getTournamentResult();
-
-        System.out.println("  Счет:");
-        System.out.printf("    %s: %d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
-        System.out.printf("    %s: %d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
-        System.out.printf("    Ничьих: %d\n", result.getDrawsCount());
-        System.out.printf("    Игра: %d/%d\n", tournamentData.getCurrentGameNumber(), options.expectedCountOfWins() * 2 + 1);
-
+    private static void drawField(Board board) {
+        int size = board.getSize();
+        // Заголовок с номерами столбцов
+        System.out.print("    ");
+        for (int j = 1; j <= size; j++) {
+            System.out.print(" " + j + " ");
+            System.out.print(" ");
+        }
         System.out.println();
-        System.out.print("  Нажмите Enter...");
-        scanner.nextLine();
+
+        // Верхняя граница
+        drawHorizontalLine(size);
+
+        // Само поле
+        for (int i = 1; i <= size; i++) {
+            System.out.print(" " + i + " |");
+            for (int j = 1; j <= size; j++) {
+                System.out.print(" " + board.getSymbol(new Coordinates(i, j)) + " |");
+            }
+            System.out.println();
+
+            // Разделительная линия между строками
+            drawHorizontalLine(size);
+        }
     }
 
-    public static void showTournamentResult(TournamentData data){
-        TournamentOptions options = data.getTournamentOptions();
-        TournamentResult result = data.getTournamentResult();
-        clearScreen();
+    private static void drawHorizontalLine(int size) {
+        System.out.print("   +");
+        for (int i = 0; i < size; i++) {
+            System.out.print("---");
+            if (i < size - 1) System.out.print("+");
+        }
+        System.out.println("+");
+    }
 
+    private static void printGameResultHeader() {
         System.out.println();
         System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║         ИТОГИ ТУРНИРА                  ║");
+        System.out.println("║            РЕЗУЛЬТАТ ИГРЫ              ║");
         System.out.println("╚════════════════════════════════════════╝\n");
-
-        System.out.println("  Результаты:");
-        System.out.printf("    Всего игр: %-20d\n", result.getTotalGamesCount());
-        System.out.printf("    Побед %s: %-23d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
-        System.out.printf("    Побед %s: %-23d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
-        System.out.printf("    Ничьих: %-28d\n", result.getDrawsCount());
-        System.out.println();
-
-        // Расчет процентов
-        if (result.getTotalGamesCount() > 0) {
-            double p1Percent = (double) result.getFirstPlayerWinsCount() / result.getTotalGamesCount() * 100;
-            double p2Percent = (double) result.getSecondPlayerWinsCount() / result.getTotalGamesCount() * 100;
-            double drawPercent = (double) result.getDrawsCount() / result.getTotalGamesCount() * 100;
-
-            System.out.println("  Процентные соотношения:");
-            System.out.printf("    %s: %.1f%%\n", options.firstPlayer().name(), p1Percent);
-            System.out.printf("    %s: %.1f%%\n", options.secondPlayer().name(), p2Percent);
-            System.out.printf("    Ничьи: %.1f%%\n", drawPercent);
-            System.out.println();
-        }
-
-        String tournamentWinner = getTournamentWinner(data);
-
-        System.out.println("  Результат турнира: " + tournamentWinner);
-        System.out.println();
-        System.out.println("═".repeat(44));
-        System.out.println();
-        System.out.print("  Нажмите Enter для возврата в меню...");
-        scanner.nextLine();
     }
 
     private static String getTournamentWinner(TournamentData data) {
@@ -417,28 +609,6 @@ public class ProgramScreenHelper {
             }
         }
         return tournamentWinner;
-    }
-
-    public static void showStatistics(Statistics stat) {
-        clearScreen();
-
-        if (stat.totalGameCount() == 0) {
-            System.out.println("  Статистика пуста. Сыграйте несколько игр!");
-            System.out.println();
-            System.out.print("  Нажмите Enter для возврата в меню...");
-            scanner.nextLine();
-            return;
-        }
-
-        System.out.println("  Общая статистика:");
-        System.out.println();
-        System.out.printf("    Всего игр: %-20d\n", stat.totalGameCount());
-        System.out.printf("    Всего турниров: %-21d\n", stat.tournamentsData().size());
-        System.out.println();
-
-        if (!stat.tournamentsData().isEmpty()) {
-            showTournamentHistory(stat.tournamentsData());
-        }
     }
 
     private static void showTournamentHistory(List<String> tournamentHistory) {
@@ -553,173 +723,5 @@ public class ProgramScreenHelper {
             }
         }
         return null;
-    }
-
-    public static void showError(String message) {
-        clearScreen();
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║              ОШИБКА!                   ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-        System.out.println("  " + message);
-        System.out.println();
-        System.out.print("  Нажмите Enter для продолжения...");
-        scanner.nextLine();
-    }
-
-    public static void showGoodbyeMessage(){
-        clearScreen();
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║             ДО СВИДАНИЯ!               ║");
-        System.out.println("║                                        ║");
-        System.out.println("║            Спасибо за игру!            ║");
-        System.out.println("║            Ждем вас снова!             ║");
-        System.out.println("╚════════════════════════════════════════╝");
-        System.out.println();
-        System.out.print("  Нажмите Enter для выхода...");
-        scanner.nextLine();
-    }
-
-    public static void drawGameProcessInfo(Player currentPlayer, Board board) {
-        clearScreen();
-
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║              ИГРА В ПРОЦЕССЕ           ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-
-        System.out.println();
-
-        drawField(board);
-
-        System.out.println("\n  Ходит: " + currentPlayer.name() + "(" + currentPlayer.symbol() + ")");
-    }
-
-    public static void showGameResultDraw() {
-        clearScreen();
-        printGameResultHeader();
-
-        System.out.println(" Ничья! \n");
-        System.out.print("  Нажмите Enter для продолжения...");
-        scanner.nextLine();
-    }
-
-    public static void showGameResultWinner(String winnerName, int totalGameMoveCount) {
-        clearScreen();
-        printGameResultHeader();
-
-        System.out.println(" Победил " + winnerName + "!");
-        System.out.println(" Количество ходов: " + totalGameMoveCount + "\n");
-        System.out.print("  Нажмите Enter для продолжения...");
-        scanner.nextLine();
-    }
-
-    private static void printGameResultHeader() {
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║            РЕЗУЛЬТАТ ИГРЫ              ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-    }
-
-    public static void showMessage(String message) {
-        clearScreen();
-        System.out.println();
-        System.out.println("╔════════════════════════════════════════╗");
-        System.out.println("║               СООБЩЕНИЕ                ║");
-        System.out.println("╚════════════════════════════════════════╝\n");
-        System.out.println("  " + message);
-        System.out.println();
-        System.out.print("  Нажмите Enter для продолжения...");
-        scanner.nextLine();
-    }
-
-    private static void drawField(Board board) {
-        int size = board.getSize();
-        // Заголовок с номерами столбцов
-        System.out.print("    ");
-        for (int j = 1; j <= size; j++) {
-            System.out.print(" " + j + " ");
-            System.out.print(" ");
-        }
-        System.out.println();
-
-        // Верхняя граница
-        drawHorizontalLine(size);
-
-        // Само поле
-        for (int i = 1; i <= size; i++) {
-            System.out.print(" " + i + " |");
-            for (int j = 1; j <= size; j++) {
-                System.out.print(" " + board.getSymbol(new Coordinates(i, j)) + " |");
-            }
-            System.out.println();
-
-            // Разделительная линия между строками
-            drawHorizontalLine(size);
-        }
-    }
-
-    private static void drawHorizontalLine(int size) {
-        System.out.print("   +");
-        for (int i = 0; i < size; i++) {
-            System.out.print("---");
-            if (i < size - 1) System.out.print("+");
-        }
-        System.out.println("+");
-    }
-
-    public static Optional<Coordinates> getMove(Board board){
-        while (true) {
-            System.out.print("\n Введите положение символа (строка столбец или 'выход'): ");
-            String input = scanner.nextLine().trim();
-
-            if (input.equalsIgnoreCase("выход") || input.equalsIgnoreCase("exit")) {
-                System.out.print("Выйти из игры? (да/нет): ");
-                if (scanner.nextLine().trim().equalsIgnoreCase("да")) {
-                    return Optional.empty();
-                }
-                continue;
-            }
-
-            try {
-                String[] parts = input.split("\\s+");
-                if (parts.length != 2) {
-                    System.out.println("Введите два числа через пробел");
-                    continue;
-                }
-
-                Coordinates moveCoordinates = new Coordinates(
-                        Integer.parseInt(parts[0]),
-                        Integer.parseInt(parts[1])
-                );
-
-                if (moveCoordinates.row() < 1 || moveCoordinates.row() > board.getSize() ||
-                        moveCoordinates.column() < 1 || moveCoordinates.column() > board.getSize()) {
-                    System.out.println("Координаты от 1 до " + board.getSize());
-                    continue;
-                }
-
-                return Optional.of(moveCoordinates);
-
-            } catch (NumberFormatException e) {
-                System.out.println("Введите числа");
-            }
-        }
-    }
-
-    private static void clearScreen() {
-        try {
-            if (System.getProperty("os.name").contains("Windows")) {
-                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-            } else {
-                System.out.print("\033[H\033[2J");
-                System.out.flush();
-            }
-        } catch (Exception e) {
-            for (int i = 0; i < 50; i++) {
-                System.out.println();
-            }
-        }
     }
 }
