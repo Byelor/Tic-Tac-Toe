@@ -73,7 +73,7 @@ public class TournamentStatisticsService {
                 "player1_symbol=" + data.getTournamentOptions().firstPlayer().symbol() + "\n" +
                 "player2_symbol=" + data.getTournamentOptions().secondPlayer().symbol() + "\n" +
                 "wins_to_complete=" + data.getTournamentOptions().expectedCountOfWins() + "\n" +
-                "games_number=" + data.getTournamentResult().getTotalGamesNumber() + "\n" +
+                "games_number=" + data.getTournamentResult().getTotalGamesCount() + "\n" +
                 "player1_wins=" + data.getTournamentResult().getFirstPlayerWinsCount() + "\n" +
                 "player2_wins=" + data.getTournamentResult().getSecondPlayerWinsCount() + "\n" +
                 "draws=" + data.getTournamentResult().getDrawsCount() + "\n";

@@ -14,7 +14,7 @@ public class TournamentResult {
         }
     }
 
-    public int getTotalGamesNumber() {
+    public int getTotalGamesCount() {
         return firstPlayerWinsCount + secondPlayerWinsCount + drawsCount;
     }
 

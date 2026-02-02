@@ -366,17 +366,17 @@ public class ProgramScreenHelper {
         System.out.println("╚════════════════════════════════════════╝\n");
 
         System.out.println("  Результаты:");
-        System.out.printf("    Всего игр: %-20d\n", result.getTotalGamesNumber());
+        System.out.printf("    Всего игр: %-20d\n", result.getTotalGamesCount());
         System.out.printf("    Побед %s: %-23d\n", options.firstPlayer().name(), result.getFirstPlayerWinsCount());
         System.out.printf("    Побед %s: %-23d\n", options.secondPlayer().name(), result.getSecondPlayerWinsCount());
         System.out.printf("    Ничьих: %-28d\n", result.getDrawsCount());
         System.out.println();
 
         // Расчет процентов
-        if (result.getTotalGamesNumber() > 0) {
-            double p1Percent = (double) result.getFirstPlayerWinsCount() / result.getTotalGamesNumber() * 100;
-            double p2Percent = (double) result.getSecondPlayerWinsCount() / result.getTotalGamesNumber() * 100;
-            double drawPercent = (double) result.getDrawsCount() / result.getTotalGamesNumber() * 100;
+        if (result.getTotalGamesCount() > 0) {
+            double p1Percent = (double) result.getFirstPlayerWinsCount() / result.getTotalGamesCount() * 100;
+            double p2Percent = (double) result.getSecondPlayerWinsCount() / result.getTotalGamesCount() * 100;
+            double drawPercent = (double) result.getDrawsCount() / result.getTotalGamesCount() * 100;
 
             System.out.println("  Процентные соотношения:");
             System.out.printf("    %s: %.1f%%\n", options.firstPlayer().name(), p1Percent);
