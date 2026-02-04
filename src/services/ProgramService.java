@@ -1,10 +1,9 @@
+package services;
+
 import models.MainMenuChoice;
 import models.TournamentData;
 import models.TournamentOptions;
 import models.Statistics;
-import services.TournamentManager;
-import services.TournamentStatisticsService;
-import services.ProgramScreenHelper;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -51,7 +50,7 @@ public class ProgramService {
     }
 
     private void saveTournamentStatisticsIfNeeded(TournamentData data) throws IOException {
-        if (data.getTournamentResult().getTotalGamesNumber() > 0) {
+        if (data.getTournamentResult().getTotalGamesCount() > 0) {
             ProgramScreenHelper.showTournamentResult(data);
             statsService.saveTournament(data);
         }

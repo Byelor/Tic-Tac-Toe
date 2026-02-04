@@ -24,7 +24,7 @@ public class Game {
 
     public GameResult play() {
         while (gameResult == GameResult.NOT_YET_DEFINED) {
-            ProgramScreenHelper.drawGameProcessInfo(currentPlayer, board);
+            ProgramScreenHelper.drawCurrentGameState(currentPlayer, board);
 
             Optional<Coordinates> moveCoordinates = currentPlayer.provider().getMove(board);
             if (moveCoordinates.isEmpty()) return GameResult.TERMINATED;
