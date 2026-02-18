@@ -1,5 +1,8 @@
 package models;
 
+import lombok.Getter;
+
+@Getter
 public class TournamentResult {
 
     private int firstPlayerWinsCount;
@@ -18,15 +21,4 @@ public class TournamentResult {
         return firstPlayerWinsCount + secondPlayerWinsCount + drawsCount;
     }
 
-    public int getFirstPlayerWinsCount() {
-        return firstPlayerWinsCount;
-    }
-
-    public int getSecondPlayerWinsCount() {
-        return secondPlayerWinsCount;
-    }
-
-    public int getDrawsCount() {
-        return drawsCount;
-    }
 }
