@@ -1,5 +1,10 @@
 package models;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class TournamentData {
 
     private final TournamentOptions tournamentOptions;
@@ -10,18 +15,6 @@ public class TournamentData {
         this.tournamentOptions = options;
         this.tournamentResult = new TournamentResult();
         currentGameNumber = 1;
-    }
-
-    public TournamentOptions getTournamentOptions() {
-        return tournamentOptions;
-    }
-
-    public TournamentResult getTournamentResult() {
-        return tournamentResult;
-    }
-
-    public int getCurrentGameNumber() {
-        return currentGameNumber;
     }
 
     public void nextGame() {
